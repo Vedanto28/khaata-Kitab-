@@ -1,128 +1,171 @@
-import { Transaction } from './db';
+// SMS Reader - Main interface for SMS automation in KhaataKitab
+// Re-exports from modular SMS components for backward compatibility
 
+import { Transaction, db, saveCategoryMapping } from './db';
+import { 
+  parseSMS as parseFinancialSMS, 
+  isFinancialSMS, 
+  ParsedSMS,
+  maskSensitiveData,
+  saveLearnedMapping,
+  getLearnedMappings 
+} from './sms-parser';
+import { 
+  processSMS, 
+  processBufferedSMS, 
+  updateCategoryLearning,
+  checkSMSVerification,
+  simulateSMSRead 
+} from './sms-service';
+import { 
+  initializeSMSAutomation, 
+  requestSMSPermissions as requestAndroidSMSPermissions,
+  checkSMSPermissions,
+  readSMSMessages,
+  registerSMSListener,
+  isAndroid,
+  isNative
+} from './android-sms-plugin';
+
+// Re-export types
+export type { ParsedSMS };
+
+// Legacy interface for backward compatibility
 interface SMSMessage {
   address: string;
   body: string;
   date: number;
 }
 
-// Common UPI/payment keywords and patterns
-const UPI_KEYWORDS = [
-  'credited', 'debited', 'received', 'sent', 'paid',
-  'UPI', 'IMPS', 'NEFT', 'RTGS', 'paytm', 'phonepe', 'gpay'
-];
-
-const AMOUNT_PATTERN = /(?:Rs\.?|INR|₹)\s*(\d+(?:,\d+)*(?:\.\d{2})?)/i;
-const UPI_ID_PATTERN = /[a-zA-Z0-9._-]+@[a-zA-Z]+/;
-
+// Legacy parse function - now uses new comprehensive parser
 export const parseSMS = (sms: SMSMessage): Transaction | null => {
-  const body = sms.body.toLowerCase();
+  if (!isFinancialSMS(sms.body)) return null;
   
-  // Check if SMS is payment related
-  const isPaymentSMS = UPI_KEYWORDS.some(keyword => body.includes(keyword.toLowerCase()));
-  if (!isPaymentSMS) return null;
-
-  // Extract amount
-  const amountMatch = sms.body.match(AMOUNT_PATTERN);
-  if (!amountMatch) return null;
+  const parsed = parseFinancialSMS(sms.body);
   
-  const amount = parseFloat(amountMatch[1].replace(/,/g, ''));
-  
-  // Determine transaction type
-  const isCredited = body.includes('credited') || body.includes('received');
-  const isDebited = body.includes('debited') || body.includes('paid') || body.includes('sent');
-  
-  const type: 'income' | 'expense' = isCredited ? 'income' : 'expense';
-  
-  // Extract UPI ID or merchant name
-  const upiMatch = sms.body.match(UPI_ID_PATTERN);
-  const description = upiMatch ? upiMatch[0] : sms.address;
-  
-  // Categorize transaction
-  const category = categorizeTransaction(sms.body, type);
+  if (parsed.amount === null) return null;
   
   return {
-    type,
-    amount,
-    description,
-    category,
-    date: new Date(sms.date),
+    type: parsed.direction === 'credit' ? 'income' : 'expense',
+    amount: parsed.amount,
+    description: parsed.merchant || `${parsed.method.toUpperCase()} Transaction`,
+    category: parsed.category,
+    date: parsed.dateTime || new Date(sms.date),
     source: 'sms',
-    rawData: sms.body,
+    rawData: maskSensitiveData(sms.body),
+    verified: !parsed.needsReview,
+    verifiedVia: 'sms',
+    isAutoAdded: true,
+    confidence: parsed.parseConfidence,
+    categoryConfidence: parsed.categoryConfidence,
+    needsReview: parsed.needsReview,
+    paymentMethod: parsed.method,
+    last4Digits: parsed.last4Digits || undefined,
+    referenceId: parsed.referenceId || undefined,
     createdAt: new Date(),
   };
 };
 
-const categorizeTransaction = (body: string, type: 'income' | 'expense'): string => {
-  const lower = body.toLowerCase();
+// Legacy permission request - uses new Android-specific implementation
+export const requestSMSPermission = async (): Promise<boolean> => {
+  const permissions = await requestAndroidSMSPermissions();
+  return permissions.readSMS;
+};
+
+// Legacy SMS read - uses new implementation
+export const readRecentSMS = async (limit: number = 50): Promise<SMSMessage[]> => {
+  const messages = await simulateSMSRead();
+  return messages.slice(0, limit).map(m => ({
+    address: m.address,
+    body: m.body,
+    date: m.date,
+  }));
+};
+
+// Initialize SMS automation on app startup
+export const initSMSAutomation = async (): Promise<void> => {
+  await initializeSMSAutomation();
   
-  if (type === 'income') {
-    // Salary keywords
-    if (lower.includes('salary') || lower.includes('wage') || lower.includes('payment received')) return 'Salary';
-    // Refund keywords
-    if (lower.includes('refund') || lower.includes('cashback') || lower.includes('reversal')) return 'Refund';
-    // Sales/business income
-    if (lower.includes('upi from') || lower.includes('received from') || lower.includes('payment from')) return 'Sales';
-    return 'Income';
-  } else {
-    // Food & Grocery
-    if (lower.includes('grocery') || lower.includes('food') || lower.includes('restaurant') || 
-        lower.includes('zomato') || lower.includes('swiggy') || lower.includes('blinkit') || 
-        lower.includes('zepto') || lower.includes('bigbasket')) return 'Food & Grocery';
-    
-    // Utilities
-    if (lower.includes('electricity') || lower.includes('water') || lower.includes('gas') || 
-        lower.includes('bill payment')) return 'Utilities';
-    
-    // Telecom/Recharge
-    if (lower.includes('recharge') || lower.includes('mobile') || lower.includes('prepaid') || 
-        lower.includes('airtel') || lower.includes('jio') || lower.includes('vodafone') || 
-        lower.includes('paytm recharge')) return 'Telecom';
-    
-    // Transport
-    if (lower.includes('fuel') || lower.includes('petrol') || lower.includes('diesel') || 
-        lower.includes('uber') || lower.includes('ola') || lower.includes('transport')) return 'Transport';
-    
-    // Rent
-    if (lower.includes('rent') || lower.includes('lease')) return 'Rent';
-    
-    // Health
-    if (lower.includes('medical') || lower.includes('hospital') || lower.includes('pharmacy') || 
-        lower.includes('medicine') || lower.includes('doctor')) return 'Health';
-    
-    // Shopping
-    if (lower.includes('shopping') || lower.includes('amazon') || lower.includes('flipkart') || 
-        lower.includes('myntra')) return 'Shopping';
-    
-    // Entertainment
-    if (lower.includes('movie') || lower.includes('netflix') || lower.includes('prime') || 
-        lower.includes('hotstar') || lower.includes('spotify')) return 'Entertainment';
-    
-    return 'Expense';
+  // Process any buffered SMS from when app was closed
+  const processedCount = await processBufferedSMS();
+  if (processedCount > 0) {
+    console.log(`Processed ${processedCount} buffered SMS messages`);
   }
 };
 
-// Mock function for SMS reading - will be replaced with actual Capacitor plugin
-export const requestSMSPermission = async (): Promise<boolean> => {
-  // This will use a Capacitor SMS plugin in production
-  // For now, return true to simulate permission granted
-  console.log('SMS permission requested');
-  return true;
+// When user corrects a category, update learning
+export const learnFromCorrection = async (transaction: Transaction, newCategory: string): Promise<void> => {
+  if (transaction.description) {
+    // Update in-memory learning
+    updateCategoryLearning(transaction.description, newCategory);
+    saveLearnedMapping(transaction.description, newCategory);
+    
+    // Persist to database
+    await saveCategoryMapping(transaction.description, newCategory);
+    
+    // Update the transaction's category in DB
+    if (transaction.id) {
+      await db.transactions.update(transaction.id, { 
+        category: newCategory,
+        categoryConfidence: 0.95, // User-confirmed category
+      });
+    }
+  }
 };
 
-export const readRecentSMS = async (limit: number = 50): Promise<SMSMessage[]> => {
-  // This will use a Capacitor SMS plugin in production
-  // Mock data for development
-  return [
-    {
-      address: 'SBIINB',
-      body: 'Rs 500.00 credited to A/c XX1234 on 15-Jan-25 by UPI/merchant@paytm (UPI Ref No 501234567890)',
-      date: Date.now() - 86400000
-    },
-    {
-      address: 'HDFCBK',
-      body: 'Rs 250.00 debited from A/c XX5678 on 14-Jan-25 for grocery@phonepe',
-      date: Date.now() - 172800000
-    }
-  ];
+// Check if transaction can be verified via SMS
+export const canVerifyViaSMS = async (transaction: Transaction): Promise<boolean> => {
+  return checkSMSVerification(transaction);
+};
+
+// Get SMS automation status
+export const getSMSAutomationStatus = async (): Promise<{
+  enabled: boolean;
+  hasPermission: boolean;
+  isAndroid: boolean;
+  lastSync: Date | null;
+}> => {
+  const settings = await db.settings.toCollection().first();
+  const permissions = await checkSMSPermissions();
+  
+  return {
+    enabled: settings?.smsAutomationEnabled ?? false,
+    hasPermission: permissions.readSMS,
+    isAndroid: isAndroid(),
+    lastSync: settings?.lastSMSSyncDate ?? null,
+  };
+};
+
+// Toggle SMS automation
+export const toggleSMSAutomation = async (enabled: boolean): Promise<void> => {
+  const settings = await db.settings.toCollection().first();
+  if (settings?.id) {
+    await db.settings.update(settings.id, { smsAutomationEnabled: enabled });
+  }
+  
+  if (enabled) {
+    await initializeSMSAutomation();
+  }
+};
+
+// Manual trigger for SMS sync
+export const syncSMSNow = async (): Promise<number> => {
+  await readSMSMessages(100, 7);
+  
+  const settings = await db.settings.toCollection().first();
+  if (settings?.id) {
+    await db.settings.update(settings.id, { lastSMSSyncDate: new Date() });
+  }
+  
+  return 0; // Will return actual count when native plugin is integrated
+};
+
+// Re-export for use in components
+export { 
+  isAndroid, 
+  isNative, 
+  checkSMSPermissions, 
+  registerSMSListener,
+  getLearnedMappings,
+  isFinancialSMS
 };
