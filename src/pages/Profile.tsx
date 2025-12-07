@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { motion } from 'framer-motion';
 import { db } from '@/lib/db';
 import { BottomNav } from '@/components/BottomNav';
 import { Card } from '@/components/ui/card';
@@ -132,11 +133,11 @@ export default function Profile() {
           </div>
         </Card>
 
-        {/* Privacy Section */}
+        {/* SMS Automation Settings */}
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <Shield className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold">{t('profile.privacy')}</h3>
+            <MessageSquare className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold">SMS Automation</h3>
           </div>
 
           <div className="space-y-4">
@@ -152,6 +153,33 @@ export default function Profile() {
                 onCheckedChange={handleSMSToggle}
               />
             </div>
+
+            {smsEnabled && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="p-4 bg-success/10 rounded-lg border border-success/20"
+              >
+                <div className="flex items-center gap-2 text-success mb-2">
+                  <Shield className="w-4 h-4" />
+                  <span className="font-medium text-sm">SMS Automation Active</span>
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>• Financial SMS are automatically converted to transactions</p>
+                  <p>• Categories are suggested using AI</p>
+                  <p>• Low confidence transactions appear in "Needs Review"</p>
+                </div>
+                <div className="mt-3 pt-3 border-t border-success/20">
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">Last sync:</span>{' '}
+                    {localStorage.getItem('lastSmsSyncTime') 
+                      ? new Date(localStorage.getItem('lastSmsSyncTime')!).toLocaleString() 
+                      : 'Never'}
+                  </p>
+                </div>
+              </motion.div>
+            )}
 
             <div className="p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">
               <p className="flex items-start gap-2">
