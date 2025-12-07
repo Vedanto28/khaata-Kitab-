@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Plus, Filter, Download, Search } from 'lucide-react';
+import { Camera, Plus, Filter, Download, Search, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { db, Transaction } from '@/lib/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { BottomNav } from '@/components/BottomNav';
@@ -25,13 +27,24 @@ export default function Ledger() {
   const [showScanDialog, setShowScanDialog] = useState(false);
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewTab, setViewTab] = useState<'all' | 'review'>('all');
 
   const transactions = useLiveQuery(
     () => db.transactions.orderBy('date').reverse().toArray(),
     []
   );
 
+  // Filter transactions needing review (auto-added with low confidence or explicitly needs review)
+  const needsReviewTransactions = transactions?.filter(t => 
+    (t.source === 'sms' && t.verified === false) || 
+    (t.source === 'sms' && !t.verified && t.category === 'Uncategorized')
+  ) || [];
+
   const filteredTransactions = transactions?.filter(t => {
+    // If on review tab, show only needs review transactions
+    if (viewTab === 'review') {
+      return needsReviewTransactions.some(rt => rt.id === t.id);
+    }
     const matchesFilter = filter === 'all' ? true : t.type === filter;
     const matchesSearch = searchQuery === '' || 
       t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -102,6 +115,35 @@ export default function Ledger() {
       {/* Transaction Timeline */}
       <TransactionTimeline transactions={filteredTransactions || []} />
 
+      {/* View Tabs - All Transactions vs Needs Review */}
+      <motion.div
+        className="px-4 mb-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.3 }}
+      >
+        <Tabs value={viewTab} onValueChange={(v) => setViewTab(v as 'all' | 'review')}>
+          <TabsList className="w-full grid grid-cols-2">
+            <TabsTrigger value="all" className="gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              All Transactions
+            </TabsTrigger>
+            <TabsTrigger value="review" className="gap-2 relative">
+              <AlertCircle className="w-4 h-4" />
+              Needs Review
+              {needsReviewTransactions.length > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full"
+                >
+                  {needsReviewTransactions.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </motion.div>
+
       {/* Search Bar */}
       <motion.div
         className="px-4 mb-4"
@@ -122,25 +164,27 @@ export default function Ledger() {
       </motion.div>
 
       {/* Filter Tabs */}
-      <motion.div
-        className="flex gap-2 px-4 mb-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.3 }}
-      >
-        {(['all', 'income', 'expense'] as const).map((filterType) => (
-          <motion.div key={filterType} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button
-              onClick={() => setFilter(filterType)}
-              variant={filter === filterType ? 'default' : 'outline'}
-              size="sm"
-              className="capitalize"
-            >
-              {t(`ledger.${filterType}`)}
-            </Button>
-          </motion.div>
-        ))}
-      </motion.div>
+      {viewTab === 'all' && (
+        <motion.div
+          className="flex gap-2 px-4 mb-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.3 }}
+        >
+          {(['all', 'income', 'expense'] as const).map((filterType) => (
+            <motion.div key={filterType} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                onClick={() => setFilter(filterType)}
+                variant={filter === filterType ? 'default' : 'outline'}
+                size="sm"
+                className="capitalize"
+              >
+                {t(`ledger.${filterType}`)}
+              </Button>
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
 
       {/* Transactions List */}
       <motion.div
