@@ -19,6 +19,7 @@ import Insights from "./pages/Insights";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { db, initializeSettings } from "./lib/db";
+import { initSMSAutomation } from "./lib/sms-reader";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,11 @@ const AppContent = () => {
       const completed = settings[0]?.onboardingCompleted || false;
       const localOnboarding = localStorage.getItem('onboardingCompleted');
       setOnboardingComplete(completed || localOnboarding === 'true');
+      
+      // Initialize SMS automation on Android
+      if (completed || localOnboarding === 'true') {
+        initSMSAutomation().catch(console.error);
+      }
     };
     checkOnboarding();
 
