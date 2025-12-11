@@ -1,6 +1,7 @@
 // SMS Service for Android - Handles SMS reading, processing, and transaction creation
 import { db, Transaction } from './db';
 import { parseSMS, isFinancialSMS, maskSensitiveData, ParsedSMS, saveLearnedMapping } from './sms-parser';
+import { predictCategory, updateModel } from './ml/classifier';
 
 interface RawSMSMessage {
   address: string;
@@ -122,6 +123,18 @@ export const processSMS = async (sms: RawSMSMessage): Promise<Transaction | null
     return null;
   }
   
+  // Get ML prediction for category
+  const textForPrediction = `${parsed.merchant || ''} ${sms.body}`.trim();
+  const mlPrediction = await predictCategory(textForPrediction);
+  
+  // Use ML prediction if confidence is higher than parser's
+  const finalCategory = mlPrediction.confidence > parsed.categoryConfidence 
+    ? mlPrediction.category 
+    : parsed.category;
+  const finalConfidence = Math.max(mlPrediction.confidence, parsed.categoryConfidence);
+  
+  console.log(`[SMS-ML] Category: ${finalCategory} (confidence: ${(finalConfidence * 100).toFixed(1)}%)`);
+  
   // Check for existing manual transaction to merge with
   const existingTransaction = await findMatchingTransaction(parsed);
   
@@ -129,9 +142,11 @@ export const processSMS = async (sms: RawSMSMessage): Promise<Transaction | null
     // Merge: Update existing transaction with SMS verification
     await db.transactions.update(existingTransaction.id, {
       verified: true,
+      verifiedVia: 'sms',
       source: 'manual', // Keep as manual since user entered it
       rawData: maskSensitiveData(sms.body),
-      confidence: parsed.parseConfidence,
+      confidence: finalConfidence,
+      categoryConfidence: finalConfidence,
     });
     
     markSMSAsProcessed(smsId);
@@ -139,17 +154,27 @@ export const processSMS = async (sms: RawSMSMessage): Promise<Transaction | null
     return existingTransaction;
   }
   
+  // Determine if needs review
+  const needsReview = parsed.direction === 'unknown' || finalConfidence < 0.5;
+  
   // Create new auto-added transaction
   const transaction: Omit<Transaction, 'id'> = {
     type: parsed.direction === 'credit' ? 'income' : 'expense',
     amount: parsed.amount,
     description: parsed.merchant || `${parsed.method.toUpperCase()} Transaction`,
-    category: parsed.category,
+    category: finalCategory,
     date: parsed.dateTime || new Date(sms.date),
     source: 'sms',
     rawData: maskSensitiveData(sms.body),
-    verified: !parsed.needsReview,
-    confidence: parsed.parseConfidence,
+    verified: !needsReview,
+    verifiedVia: 'sms',
+    isAutoAdded: true,
+    confidence: finalConfidence,
+    categoryConfidence: finalConfidence,
+    paymentMethod: parsed.method,
+    referenceId: parsed.referenceId,
+    last4Digits: parsed.last4Digits,
+    needsReview,
     createdAt: new Date(),
   };
   
@@ -179,9 +204,16 @@ export const processBufferedSMS = async (): Promise<number> => {
 };
 
 // Update category learning when user corrects
-export const updateCategoryLearning = (merchant: string, category: string): void => {
+export const updateCategoryLearning = async (merchant: string, category: string, fullText?: string): Promise<void> => {
   if (merchant && category) {
+    // Update local keyword mapping
     saveLearnedMapping(merchant, category);
+    
+    // Update ML model
+    const textForLearning = fullText || merchant;
+    await updateModel(textForLearning, category);
+    
+    console.log(`[SMS-ML] Learned: "${merchant}" → ${category}`);
   }
 };
 
