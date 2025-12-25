@@ -1,73 +1,159 @@
-# Welcome to your Lovable project
+KhaataKitab — Smart Bookkeeping for Small Businesses
+Project Overview
 
-## Project info
+KhaataKitab is a smart bookkeeping and financial assistant built for small vendors and micro-entrepreneurs. It helps users maintain a structured digital ledger by automatically capturing transactions, categorizing income and expenses, and generating meaningful financial insights with minimal manual effort.
 
-**URL**: https://lovable.dev/projects/d47af716-24ae-4be3-a18c-44a5f4f367c9
+The app is designed with a mobile-first mindset, optimized for real-world Indian transaction patterns and everyday usability.
 
-## How can I edit this code?
+🔗 Project URL: https://lovable.dev/projects/d47af716-24ae-4be3-a18c-44a5f4f367c9
 
-There are several ways of editing your application.
+What Problem It Solves
 
-**Use Lovable**
+Manual bookkeeping is time-consuming and error-prone
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d47af716-24ae-4be3-a18c-44a5f4f367c9) and start prompting.
+Transactions are scattered across UPI, cards, wallets, and cash
 
-Changes made via Lovable will be committed automatically to this repo.
+Users rely heavily on SMS alerts but don’t get structured records
 
-**Use your preferred IDE**
+Lack of verified financial history limits access to credit
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+KhaataKitab bridges this gap by converting raw transaction signals into a clean, intelligent ledger.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Key Features
 
-Follow these steps:
+Automated Transaction Capture
+Reads bank/payment SMS on Android and extracts amount, merchant, date, and payment method.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+Smart Categorization (AI-Assisted)
+Automatically categorizes transactions and improves accuracy based on user corrections.
+
+SMS-Based Verification
+Matches manual entries with actual bank SMS and marks them as Verified by SMS when data aligns.
+
+Insights & Planning
+Monthly summaries, spending breakdowns, and editable income goals.
+
+User-Friendly Experience
+Guided walkthroughs, dark/light mode support, and clean mobile-first UI.
+
+My Contributions & Technical Ownership
+
+While AI-assisted tools were used to speed up development, the core logic, system behavior, and user experience were designed and driven by me.
+
+Frontend UX & Guided Walkthrough
+
+I designed and implemented an in-app feature guide walkthrough that helps first-time users understand:
+
+Adding transactions
+
+Scanning receipts
+
+Setting monthly goals
+
+Using insights and AI indicators
+
+This improves usability and feature discoverability, especially for non-technical users.
+
+SMS Verification Logic (Core Idea)
+
+I proposed and designed the logic where:
+
+Users can manually log transactions
+
+The app later reads real bank/payment SMS
+
+The system compares amount, timing, merchant, and method
+
+Matching entries are marked as “Verified by SMS”
+
+This ensures higher trust, avoids duplicates, and keeps verification explainable.
+
+Intelligent Categorization Strategy
+
+I designed the categorization approach based on merchant semantics, for example:
+
+IRCTC, UTS → Travel
+
+HDFC, EMI → Banking / Loans
+
+PHARMA, WELLNESS → Healthcare
+
+I structured keyword mappings and passed numerous real and dummy SMS samples to train the backend logic, with a feedback loop where user corrections continuously improve predictions.
+
+Backend Logic & AI Direction
+
+My work included:
+
+Designing SMS parsing logic
+
+Confidence-based verification (verified vs needs review)
+
+ML-friendly data pipelines
+
+Ensuring AI outputs are transparent and user-overrideable
+
+Mobile App Enablement
+
+I handled:
+
+Converting the web app into an Android app using Capacitor
+
+Configuring permissions and builds in Android Studio
+
+Debugging runtime and build issues on real devices
+
+Tech Stack
+
+Frontend
+
+React + TypeScript
+
+Vite
+
+Tailwind CSS
+
+shadcn/ui
+
+Mobile
+
+Capacitor (Android)
+
+Android Studio
+
+Backend / AI (Extensible)
+
+Node.js
+
+SMS parsing & ML-assisted categorization
+
+Running the Project Locally
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm install
 npm run dev
-```
 
-**Edit a file directly in GitHub**
+Deployment
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The project can be previewed and published via Lovable:
 
-**Use GitHub Codespaces**
+Open the project link
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Use Share → Publish
 
-## What technologies are used for this project?
+The same codebase can be extended and deployed independently.
 
-This project is built with:
+Project Direction
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+KhaataKitab is being built as a practical fintech product, with future scope for:
 
-## How can I deploy this project?
+Stronger ML models
 
-Simply open [Lovable](https://lovable.dev/projects/d47af716-24ae-4be3-a18c-44a5f4f367c9) and click on Share -> Publish.
+Multi-language support
 
-## Can I connect a custom domain to my Lovable project?
+Explainable credit indicators
 
-Yes, you can!
+Secure authentication and app-lock features
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Final Note
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+This project represents hands-on engineering, product thinking, and applied AI, with AI tools used as accelerators — not replacements for design decisions, logic, or implementation.
