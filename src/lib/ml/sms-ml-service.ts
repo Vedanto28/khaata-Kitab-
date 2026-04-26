@@ -60,7 +60,7 @@ export async function processSMSWithML(
         direction: parsed.direction,
       });
       if (llm?.category && llm.confidence > prediction.confidence) {
-        prediction = { category: llm.category, confidence: llm.confidence };
+        prediction = { category: llm.category, confidence: llm.confidence, allProbabilities: { [llm.category]: llm.confidence } };
         console.log(`[SMS-ML] LLM refined → ${llm.category} (${(llm.confidence * 100).toFixed(1)}%) — ${llm.reason}`);
         // Online learning: train the local model on the LLM's answer
         try { await updateModel(textForPrediction, llm.category); } catch (e) { console.warn('[SMS-ML] updateModel failed', e); }
