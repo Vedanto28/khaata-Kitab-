@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { TourProvider } from "@/contexts/TourContext";
 import { GuidedTour } from "@/components/GuidedTour";
 import { AppLockScreen } from "@/components/AppLockScreen";
+import { SMSConfirmationListener } from "@/components/SMSConfirmationListener";
 import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -99,6 +100,7 @@ const AppContent = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <GuidedTour />
+      {isAuthenticated && <SMSConfirmationListener />}
     </>
   );
 };
