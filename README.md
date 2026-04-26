@@ -1,186 +1,200 @@
+# 📒 KhaataKitab
 
-# **KhaataKitab — Smart Bookkeeping for Small Businesses**
+### Agentic AI for Everyday Bookkeeping
 
----
-
-## **Project Overview**
-
-**KhaataKitab** is a smart bookkeeping and financial assistant built for small vendors and micro-entrepreneurs. It helps users maintain a structured digital ledger by automatically capturing transactions, categorizing income and expenses, and generating meaningful financial insights with minimal manual effort.
-
-The app is designed with a **mobile-first mindset**, optimized for real-world Indian transaction patterns and everyday usability.
-
-🔗 **Project URL**:
-[https://lovable.dev/projects/d47af716-24ae-4be3-a18c-44a5f4f367c9](https://lovable.dev/projects/d47af716-24ae-4be3-a18c-44a5f4f367c9)
+<p align="center">
+  <b>From raw transaction noise → verified financial intelligence</b><br/>
+  Built for Mumbai Hack 2026 • Agentic AI Track
+</p>
 
 ---
 
-## **What Problem It Solves**
+## 🚀 What is KhaataKitab?
 
-* Manual bookkeeping is time-consuming and error-prone
-* Transactions are scattered across UPI, cards, wallets, and cash
-* Users rely heavily on SMS alerts but don’t get structured records
-* Lack of verified financial history limits access to credit
+**KhaataKitab is not just a CRUD app.**
+It’s an **agentic financial assistant** that observes, verifies, and organizes transactions with minimal user effort.
 
-**KhaataKitab bridges this gap** by converting raw transaction signals into a clean, intelligent ledger.
-
----
-
-## **Key Features**
-
-### **Automated Transaction Capture**
-
-* Reads bank/payment SMS on Android
-* Extracts amount, merchant, date, and payment method automatically
-
-### **Smart Categorization (AI-Assisted)**
-
-* Categorizes income and expenses automatically
-* Improves accuracy over time using user corrections
-
-### **SMS-Based Verification**
-
-* Matches manual entries with actual bank/payment SMS
-* Marks transactions as **“Verified by SMS”** when data aligns
-
-### **Insights & Planning**
-
-* Monthly summaries and spending breakdowns
-* Editable monthly income goals with progress tracking
-
-### **User-Friendly Experience**
-
-* Guided walkthroughs for first-time users
-* Light and dark mode support
-* Clean, mobile-first interface
+Instead of asking users to maintain records,
+👉 **the system actively helps maintain them.**
 
 ---
 
-## **My Contributions & Technical Ownership**
+## 🧠 Why This Exists
 
-While AI-assisted tools were used to speed up development, the **core logic, system behavior, and user experience were designed and driven by me**.
+In real-world India:
 
----
+* Payments happen across **UPI, cash, cards, wallets**
+* Users rely on **SMS alerts**, not apps
+* Bookkeeping is **manual, inconsistent, and ignored**
 
-### **Frontend UX & Guided Walkthrough**
+Result:
 
-I designed and implemented an **in-app feature guide walkthrough** that helps first-time users understand:
-
-* Adding transactions
-* Scanning receipts
-* Setting monthly goals
-* Using insights and AI indicators
-
-This significantly improves usability and feature discoverability, especially for non-technical users.
+* ❌ No structured financial history
+* ❌ Low trust in records
+* ❌ Poor financial visibility
 
 ---
 
-### **SMS Verification Logic (Core Idea)**
+## 💡 The Core Idea
 
-I proposed and designed the verification logic where:
+> Treat financial data like a stream of signals — not manual inputs.
 
-* Users can manually log transactions
-* The app later reads real bank/payment SMS
-* The system compares **amount, timing, merchant, and payment method**
-* Matching entries are marked as **“Verified by SMS”**
+KhaataKitab acts as an **agent** that:
 
-This approach:
-
-* Improves trust in records
-* Prevents duplicate entries
-* Keeps verification explainable and transparent
+* Observes → (SMS + user input)
+* Interprets → (parsing + categorization)
+* Validates → (verification logic)
+* Organizes → (structured ledger)
+* Assists → (insights + goals)
 
 ---
 
-### **Intelligent Categorization Strategy**
+## ⚙️ Key Capabilities
 
-I designed the categorization approach based on merchant semantics, such as:
+### 📲 Passive Transaction Capture
 
-* **IRCTC, UTS** → Travel
-* **HDFC, EMI** → Banking / Loans
-* **PHARMA, WELLNESS** → Healthcare
-
-I structured keyword mappings and passed **numerous real and dummy SMS samples** to train backend logic, with a feedback loop where user corrections continuously improve future predictions.
+* Reads financial SMS automatically
+* Extracts structured data in real time
 
 ---
 
-### **Backend Logic & AI Direction**
+### 🧠 Intelligent Categorization
 
-My work included:
-
-* Designing SMS parsing logic
-* Implementing confidence-based verification (verified vs needs review)
-* Structuring ML-friendly data pipelines
-* Ensuring AI outputs remain transparent and user-overrideable
+* Uses merchant semantics + pattern logic
+* Continuously improves via feedback loop
 
 ---
 
-### **Mobile App Enablement**
+### ✅ Verification Engine *(Agent Behavior)*
 
-I handled:
+* Cross-checks manual entries with SMS data
+* Matches:
 
-* Converting the web app into an Android app using **Capacitor**
-* Configuring Android permissions and build settings
-* Debugging build and runtime issues in **Android Studio**
-* Ensuring the app works reliably on real Android devices
+  * amount
+  * timestamp
+  * merchant
+  * payment method
 
----
+✔ Flags entries as **Verified / Needs Review**
 
-## **Tech Stack**
-
-### **Frontend**
-
-* React + TypeScript
-* Vite
-* Tailwind CSS
-* shadcn/ui
-
-### **Mobile**
-
-* Capacitor (Android)
-* Android Studio
-
-### **Backend / AI (Extensible)**
-
-* Node.js
-* SMS parsing & ML-assisted categorization
+> This creates **trustable financial data**, not just stored data.
 
 ---
 
-## **Running the Project Locally**
+### 📊 Insight Layer
 
-```sh
-git clone <YOUR_GIT_URL>
-cd <YOUR_PROJECT_NAME>
-npm install
-npm run dev
+* Monthly summaries
+* Spending distribution
+* Goal tracking with progress
+
+---
+
+### 🎯 Human-Centric UX
+
+* Guided onboarding
+* Minimal input required
+* Designed for non-technical users
+
+---
+
+## 🔄 System Flow
+
+```id="flow-ai"
+Signal (SMS / Input)
+        ↓
+Extraction Engine
+        ↓
+Categorization Layer
+        ↓
+Verification Engine
+        ↓
+Structured Ledger
+        ↓
+Insights + Feedback Loop
 ```
 
 ---
 
-## **Deployment**
+## 🏗️ What Makes It “Agentic AI”
 
-The project can be previewed and published via Lovable:
+This system demonstrates **agent-like behavior**:
 
-* Open the project link
-* Use **Share → Publish**
+* 🔍 **Perception** → Reads SMS data
+* 🧠 **Reasoning** → Categorizes + matches patterns
+* ⚖️ **Decision-making** → Verifies vs flags
+* 🔁 **Learning loop** → Improves via user corrections
 
-The same codebase can be extended and deployed independently.
-
----
-
-## **Project Direction**
-
-KhaataKitab is being built as a **practical fintech product**, with future scope for:
-
-* Stronger ML models
-* Multi-language support
-* Explainable credit indicators
-* Secure authentication and app-lock features
+👉 It doesn’t just store data — it **acts on it**
 
 ---
 
-## **Final Note**
+## 🛠️ Tech Stack
 
-This project represents **hands-on engineering, product thinking, and applied AI**, with AI tools used as accelerators — **not replacements** for design decisions, logic, or implementation.
+### Frontend
+
+* React + TypeScript
+* Tailwind CSS
+* Vite
+
+### Mobile
+
+* Capacitor (Android)
+* Android Studio
+
+### Backend / Intelligence Layer
+
+* Node.js
+* SMS parsing engine
+* Rule-based + ML-assisted categorization
 
 ---
+
+## ⚡ Execution Highlights
+
+* Designed full **verification logic pipeline**
+* Built **semantic categorization system**
+* Implemented **real-time UI sync with backend**
+* Enabled **mobile SMS integration on Android**
+* Structured system for **future ML scalability**
+
+---
+
+## 🌐 Live Demo
+
+🔗 https://lovable.dev/projects/d47af716-24ae-4be3-a18c-44a5f4f367c9
+
+---
+
+## 🔮 Future Direction
+
+* 📈 Advanced ML-based categorization
+* 🔐 Secure identity + financial protection
+* 💳 Creditworthiness indicators
+* 🌍 Multi-language support
+* ☁️ Cloud sync
+
+---
+
+## 👨‍💻 Developer Note
+
+This project was built during **Mumbai Hack 2026 (Agentic AI Hackathon)** with a focus on:
+
+* Real-world usability
+* Intelligent system behavior
+* Clean architecture over complexity
+
+AI tools were used as accelerators —
+but system design, logic, and execution were **driven independently**.
+
+---
+
+## 📌 Closing Thought
+
+> The future of apps isn’t more features.
+> It’s systems that **act, assist, and adapt**.
+
+---
+
+## 📄 License
+
+MIT License
