@@ -143,31 +143,31 @@ export async function ingestSMS(
       return matchingManual;
     }
     
-    // Save new transaction
-    const newTransaction: Transaction = {
-      type: processed.transaction.type as 'income' | 'expense',
-      amount: processed.transaction.amount!,
-      description: processed.transaction.description!,
-      category: processed.transaction.category!,
-      date: processed.transaction.date!,
-      source: 'sms',
-      verified: !processed.needsReview,
-      verifiedVia: 'sms',
-      isAutoAdded: true,
-      confidence: processed.prediction.confidence,
-      needsReview: processed.needsReview,
-      rawData: rawSmsText,
-      paymentMethod: processed.parsed.method,
-      referenceId: processed.parsed.referenceId,
-      last4Digits: processed.parsed.last4Digits,
-      categoryConfidence: processed.prediction.confidence,
-      createdAt: new Date()
-    };
-    
-    const id = await db.transactions.add(newTransaction);
-    console.log(`[SMS-ML] Saved transaction #${id}`);
-    
-    return { ...newTransaction, id };
+    // Dispatch AI confirmation event — user must approve before saving
+    if (typeof window !== 'undefined') {
+      const detail = {
+        data: {
+          type: (processed.transaction.type as 'income' | 'expense') || 'expense',
+          merchant: processed.transaction.description || 'SMS Transaction',
+          amount: processed.transaction.amount!,
+          date: processed.transaction.date || receivedAt,
+          category: processed.transaction.category || 'Other Expense',
+          source: 'sms' as const,
+          confidence: processed.prediction.confidence,
+          rawText: rawSmsText,
+        },
+        rawSms: rawSmsText,
+        parsed: {
+          referenceId: processed.parsed.referenceId,
+          last4Digits: processed.parsed.last4Digits,
+          method: processed.parsed.method,
+        },
+      };
+      window.dispatchEvent(new CustomEvent('khaata:sms-pending-confirm', { detail }));
+      console.log('[SMS-ML] Dispatched confirmation event for user review');
+    }
+
+    return null;
   } catch (error) {
     console.error('[SMS-ML] Error ingesting SMS:', error);
     return null;
