@@ -1,197 +1,215 @@
 # 📒 KhaataKitab
 
-### Agentic AI for Everyday Bookkeeping
+### ⚡ Agentic AI Ledger for Real-World Finance
 
 <p align="center">
-  <b>From raw transaction noise → verified financial intelligence</b><br/>
-  Built for Mumbai Hack 2026 • Agentic AI Track
+  <img src="https://img.shields.io/badge/Mumbai%20Hack-2026-black?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Track-Agentic%20AI-purple?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Stage-Working%20Product-success?style=for-the-badge"/>
+</p>
+
+<p align="center">
+  <b>Observe • Understand • Verify • Assist</b><br/>
+  Turning raw transaction signals into intelligent financial records
 </p>
 
 ---
 
-## 🚀 What is KhaataKitab?
+## 🚀 Live App
 
-**KhaataKitab is not just a CRUD app.**
-It’s an **agentic financial assistant** that observes, verifies, and organizes transactions with minimal user effort.
-
-Instead of asking users to maintain records,
-👉 **the system actively helps maintain them.**
+🔗 https://khaata-kitab.lovable.app
 
 ---
 
-## 🧠 Why This Exists
+## 🧠 What Makes KhaataKitab Different?
 
-In real-world India:
+Most finance apps expect users to **input everything manually**.
 
-* Payments happen across **UPI, cash, cards, wallets**
-* Users rely on **SMS alerts**, not apps
-* Bookkeeping is **manual, inconsistent, and ignored**
+KhaataKitab flips that:
 
-Result:
-
-* ❌ No structured financial history
-* ❌ Low trust in records
-* ❌ Poor financial visibility
+> It behaves like an **agent** that watches, processes, and assists —
+> instead of waiting for user input.
 
 ---
 
-## 💡 The Core Idea
+## 🎯 Problem → Insight → Solution
 
-> Treat financial data like a stream of signals — not manual inputs.
-
-KhaataKitab acts as an **agent** that:
-
-* Observes → (SMS + user input)
-* Interprets → (parsing + categorization)
-* Validates → (verification logic)
-* Organizes → (structured ledger)
-* Assists → (insights + goals)
+| 🚨 Problem         | 💡 Insight            | ⚡ Solution           |
+| ------------------ | --------------------- | -------------------- |
+| Scattered payments | SMS already has truth | Read & structure SMS |
+| Manual errors      | Users forget entries  | Auto + verify system |
+| No trust in data   | Raw logs ≠ reliable   | Verification engine  |
+| No clarity         | Data ≠ insight        | Smart analytics      |
 
 ---
 
-## ⚙️ Key Capabilities
+## ⚙️ Core System Capabilities
 
 ### 📲 Passive Transaction Capture
 
-* Reads financial SMS automatically
-* Extracts structured data in real time
+* Reads financial SMS (Android)
+* Converts unstructured text → structured data
 
 ---
 
 ### 🧠 Intelligent Categorization
 
-* Uses merchant semantics + pattern logic
-* Continuously improves via feedback loop
+* Semantic + keyword-based mapping
+* Learns from corrections (feedback loop)
 
 ---
 
-### ✅ Verification Engine *(Agent Behavior)*
+### ✅ Verification Engine *(Trust Layer)*
 
-* Cross-checks manual entries with SMS data
-* Matches:
+* Matches manual entries with SMS data
+* Compares:
 
   * amount
-  * timestamp
+  * time
   * merchant
   * payment method
 
-✔ Flags entries as **Verified / Needs Review**
+✔ Outputs:
 
-> This creates **trustable financial data**, not just stored data.
+* **Verified**
+* **Needs Review**
 
 ---
 
 ### 📊 Insight Layer
 
 * Monthly summaries
-* Spending distribution
-* Goal tracking with progress
+* Category distribution
+* Financial awareness at a glance
 
 ---
 
-### 🎯 Human-Centric UX
+## ✨ UI/UX Intelligence (Latest Enhancements)
 
-* Guided onboarding
-* Minimal input required
-* Designed for non-technical users
+> Not just functional — **responsive, adaptive, and intuitive**
+
+### 🔐 Authentication Flow
+
+* Lightweight login system (local storage-based)
+* Protected routes + session persistence
+* Logout integrated into profile settings
 
 ---
 
-## 🔄 System Flow
+### 🏷️ Smart Transaction Feedback
 
-```id="flow-ai"
-Signal (SMS / Input)
-        ↓
-Extraction Engine
-        ↓
-Categorization Layer
-        ↓
-Verification Engine
-        ↓
-Structured Ledger
-        ↓
-Insights + Feedback Loop
+* “Needs Review” badge:
+
+  * No overlap issues
+  * Smooth fade-out on verification
+* Real-time UI state updates
+
+---
+
+### 🎯 Editable Financial Goals
+
+* Monthly income goal with modal editing
+* Immediate visual feedback
+
+---
+
+### 📱 Fully Responsive Experience
+
+* Adaptive grid:
+
+  * 1 column → mobile
+  * 2 → tablet
+  * 3 → desktop
+* Smooth animations:
+
+  * Fade-in
+  * Slide-up
+  * Scale transitions
+
+---
+
+### 🎨 Micro-Interactions & Polish
+
+* Hover elevation effects
+* Consistent spacing & alignment
+* 200–300ms smooth transitions
+* Dark mode optimized
+
+---
+
+## 🎬 System Flow
+
+```mermaid id="flow-smart"
+flowchart TD
+A[📩 SMS / Input] --> B[🔍 Parsing Engine]
+B --> C[🧠 Categorization]
+C --> D[✅ Verification Engine]
+D --> E[📒 Ledger]
+E --> F[📊 Insights]
+F --> C
 ```
 
 ---
 
-## 🏗️ What Makes It “Agentic AI”
+## 🤖 Why This is Agentic AI
 
-This system demonstrates **agent-like behavior**:
+<details>
+<summary>Click to explore</summary>
 
 * 🔍 **Perception** → Reads SMS data
-* 🧠 **Reasoning** → Categorizes + matches patterns
+* 🧠 **Reasoning** → Categorizes transactions
 * ⚖️ **Decision-making** → Verifies vs flags
-* 🔁 **Learning loop** → Improves via user corrections
+* 🔁 **Learning loop** → Improves via user feedback
 
-👉 It doesn’t just store data — it **acts on it**
+👉 This is a **behavior-driven system**, not static CRUD
+
+</details>
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-
-* React + TypeScript
-* Tailwind CSS
-* Vite
-
-### Mobile
-
-* Capacitor (Android)
-* Android Studio
-
-### Backend / Intelligence Layer
-
-* Node.js
-* SMS parsing engine
-* Rule-based + ML-assisted categorization
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=react,ts,nodejs,postgres,tailwind"/>
+</p>
 
 ---
 
-## ⚡ Execution Highlights
+## ⚡ Engineering Highlights
 
-* Designed full **verification logic pipeline**
-* Built **semantic categorization system**
-* Implemented **real-time UI sync with backend**
-* Enabled **mobile SMS integration on Android**
-* Structured system for **future ML scalability**
-
----
-
-## 🌐 Live Demo
-
-🔗 https://lovable.dev/projects/d47af716-24ae-4be3-a18c-44a5f4f367c9
+* Designed **verification logic pipeline**
+* Built **semantic categorization engine**
+* Implemented **real-time UI sync**
+* Integrated **mobile SMS-based data ingestion**
+* Structured system for **future ML scaling**
 
 ---
 
-## 🔮 Future Direction
+## 🚀 Run Locally
 
-* 📈 Advanced ML-based categorization
-* 🔐 Secure identity + financial protection
-* 💳 Creditworthiness indicators
+```bash id="run123"
+git clone <YOUR_GIT_URL>
+cd <PROJECT_NAME>
+npm install
+npm run dev
+```
+
+---
+
+## 🔮 Future Roadmap
+
+* 📈 ML-powered categorization
+* 🔐 Secure authentication (JWT / biometrics)
+* 💳 Credit scoring indicators
 * 🌍 Multi-language support
-* ☁️ Cloud sync
+* ☁️ Cloud sync + backups
 
 ---
 
-## 👨‍💻 Developer Note
+## 💬 Philosophy
 
-This project was built during **Mumbai Hack 2026 (Agentic AI Hackathon)** with a focus on:
-
-* Real-world usability
-* Intelligent system behavior
-* Clean architecture over complexity
-
-AI tools were used as accelerators —
-but system design, logic, and execution were **driven independently**.
-
----
-
-## 📌 Closing Thought
-
-> The future of apps isn’t more features.
-> It’s systems that **act, assist, and adapt**.
+> The future of apps is not interaction.
+> It’s **automation with intelligence**.
 
 ---
 
