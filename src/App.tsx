@@ -100,6 +100,7 @@ const AppContent = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <GuidedTour />
+      {isAuthenticated && <SMSConfirmationListener />}
     </>
   );
 };
