@@ -17,6 +17,7 @@ import Ledger from "./pages/Ledger";
 import Inventory from "./pages/Inventory";
 import Insights from "./pages/Insights";
 import Profile from "./pages/Profile";
+import AIAssistant from "./pages/AIAssistant";
 import NotFound from "./pages/NotFound";
 import { db, initializeSettings } from "./lib/db";
 import { initSMSAutomation } from "./lib/sms-reader";
@@ -90,6 +91,10 @@ const AppContent = () => {
         <Route 
           path="/profile" 
           element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />} 
+        />
+        <Route
+          path="/ai"
+          element={isAuthenticated ? <AIAssistant /> : <Navigate to="/login" replace />}
         />
         <Route path="*" element={<NotFound />} />
       </Routes>

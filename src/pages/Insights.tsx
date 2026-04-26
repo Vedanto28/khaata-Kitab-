@@ -9,6 +9,7 @@ import { predictCashflow, generateAlerts, calculateCreditSignal } from '@/lib/ai
 import { Badge } from '@/components/ui/badge';
 import { OfflineSyncIndicator } from '@/components/OfflineSyncIndicator';
 import { DashboardSummaryCards } from '@/components/DashboardSummaryCards';
+import { AIMonthlySummary } from '@/components/AIMonthlySummary';
 
 export default function Insights() {
   const transactions = useLiveQuery(
@@ -79,6 +80,11 @@ export default function Insights() {
 
       {/* Dashboard Summary Cards */}
       <DashboardSummaryCards transactions={transactions} />
+
+      {/* AI Monthly Summary */}
+      <div className="px-4 mb-4">
+        <AIMonthlySummary transactions={transactions} />
+      </div>
 
       {/* Microloan Eligibility Bar */}
       <motion.div

@@ -1,0 +1,13 @@
+project_id = "mqfwcghtykyfrkmvmazz"
+
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.ai-categorize]
+verify_jwt = false
+
+[functions.ai-insights]
+verify_jwt = false
+
+[functions.ai-receipt]
+verify_jwt = false

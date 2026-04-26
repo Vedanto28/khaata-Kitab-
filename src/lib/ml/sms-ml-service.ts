@@ -1,9 +1,13 @@
 // SMS ML Service - Integrates classifier with SMS parsing
-// Handles the complete flow: SMS → Parse → Classify → Store
+// Handles the complete flow: SMS → Parse → Classify (ML + LLM fallback) → Store
 
 import { db, Transaction } from '../db';
 import { predictCategory, updateModel } from './classifier';
 import { parseSMS, isFinancialSMS, type ParsedSMS } from '../sms-parser';
+import { aiCategorize } from '../ai-client';
+
+// Threshold below which we ask the LLM to refine the category
+const LLM_FALLBACK_THRESHOLD = 0.45;
 
 export interface ProcessedSMS {
   transaction: Partial<Transaction>;
@@ -41,10 +45,31 @@ export async function processSMSWithML(
   
   // Step 3: Get ML prediction
   const textForPrediction = `${parsed.merchant || ''} ${rawSmsText}`.trim();
-  const prediction = await predictCategory(textForPrediction);
-  
+  let prediction = await predictCategory(textForPrediction);
+
   console.log(`[SMS-ML] Predicted: ${prediction.category} (${(prediction.confidence * 100).toFixed(1)}%)`);
-  
+
+  // Step 3b: LLM fallback when confidence is low
+  if (prediction.confidence < LLM_FALLBACK_THRESHOLD && parsed.amount) {
+    try {
+      console.log('[SMS-ML] Confidence low, asking LLM for refinement');
+      const llm = await aiCategorize({
+        text: rawSmsText,
+        merchant: parsed.merchant,
+        amount: parsed.amount,
+        direction: parsed.direction,
+      });
+      if (llm?.category && llm.confidence > prediction.confidence) {
+        prediction = { category: llm.category, confidence: llm.confidence, allProbabilities: { [llm.category]: llm.confidence } };
+        console.log(`[SMS-ML] LLM refined → ${llm.category} (${(llm.confidence * 100).toFixed(1)}%) — ${llm.reason}`);
+        // Online learning: train the local model on the LLM's answer
+        try { await updateModel(textForPrediction, llm.category); } catch (e) { console.warn('[SMS-ML] updateModel failed', e); }
+      }
+    } catch (e) {
+      console.warn('[SMS-ML] LLM fallback failed (using ML prediction):', e);
+    }
+  }
+
   // Step 4: Determine if review is needed
   const needsReview = prediction.confidence < 0.5 || parsed.direction === 'unknown';
   

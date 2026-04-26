@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, TrendingUp, User, Package } from 'lucide-react';
+import { BookOpen, TrendingUp, User, Package, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export const BottomNav = () => {
@@ -9,6 +9,7 @@ export const BottomNav = () => {
   const navItems = [
     { path: '/ledger', icon: BookOpen, label: t('nav.ledger') },
     { path: '/inventory', icon: Package, label: t('nav.inventory') },
+    { path: '/ai', icon: Sparkles, label: 'AI' },
     { path: '/insights', icon: TrendingUp, label: t('nav.insights') },
     { path: '/profile', icon: User, label: t('nav.profile') },
   ];
