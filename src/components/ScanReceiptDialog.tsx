@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Camera as CameraComponent } from '@capacitor/camera';
 import { CameraResultType, CameraSource } from '@capacitor/camera';
 import { performOCR } from '@/lib/ocr-service';
+import { aiReceipt } from '@/lib/ai-client';
 import { db, Transaction } from '@/lib/db';
 import { toast } from 'sonner';
-import { Loader2, Camera, Upload } from 'lucide-react';
+import { Loader2, Camera, Upload, Sparkles } from 'lucide-react';
 
 interface ScanReceiptDialogProps {
   open: boolean;
@@ -16,11 +17,13 @@ interface ScanReceiptDialogProps {
 export const ScanReceiptDialog = ({ open, onOpenChange }: ScanReceiptDialogProps) => {
   const [processing, setProcessing] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [statusText, setStatusText] = useState('Processing receipt...');
 
   const handleCapture = async (source: CameraSource) => {
     try {
       setProcessing(true);
-      
+      setStatusText('Capturing image...');
+
       const image = await CameraComponent.getPhoto({
         quality: 90,
         allowEditing: false,
@@ -34,38 +37,66 @@ export const ScanReceiptDialog = ({ open, onOpenChange }: ScanReceiptDialogProps
       }
 
       setImageUrl(image.dataUrl);
-      
-      // Perform OCR
-      const ocrResult = await performOCR(image.dataUrl);
-      
-      if (ocrResult.amount) {
-        // Create transaction from OCR result
+
+      // Try AI vision first
+      let amount: number | undefined;
+      let vendor: string | undefined;
+      let category = 'Other Expense';
+      let dateStr: string | undefined;
+      let items: string[] = [];
+      let rawText = '';
+      let usedAI = false;
+
+      try {
+        setStatusText('AI is reading your receipt...');
+        const ai = await aiReceipt(image.dataUrl);
+        if (ai.totalAmount) {
+          amount = ai.totalAmount;
+          vendor = ai.merchant ?? undefined;
+          category = ai.category || category;
+          dateStr = ai.date ?? undefined;
+          items = ai.items || [];
+          usedAI = true;
+        }
+      } catch (e: any) {
+        console.warn('AI receipt failed, falling back to OCR:', e?.message);
+      }
+
+      // Fallback: on-device OCR
+      if (!amount) {
+        setStatusText('Falling back to on-device OCR...');
+        const ocrResult = await performOCR(image.dataUrl);
+        amount = ocrResult.amount;
+        vendor = ocrResult.vendor;
+        items = ocrResult.items || [];
+        rawText = ocrResult.text;
+      }
+
+      if (amount) {
         const transaction: Transaction = {
-          type: 'expense', // Receipts are typically expenses
-          amount: ocrResult.amount,
-          description: ocrResult.vendor || 'Receipt',
-          category: 'Other Expense',
-          date: new Date(),
+          type: 'expense',
+          amount,
+          description: vendor || 'Receipt',
+          category,
+          date: dateStr ? new Date(dateStr) : new Date(),
           source: 'receipt',
-          rawData: ocrResult.text,
+          rawData: rawText,
           createdAt: new Date(),
         };
 
         await db.transactions.add(transaction);
-        
-        // Store receipt
+
         await db.receipts.add({
           imageUrl: image.dataUrl,
-          extractedData: {
-            amount: ocrResult.amount,
-            vendor: ocrResult.vendor,
-            date: ocrResult.date,
-            items: ocrResult.items,
-          },
+          extractedData: { amount, vendor, date: dateStr, items },
           createdAt: new Date(),
         });
 
-        toast.success(`Receipt processed! Amount: ₹${ocrResult.amount}`);
+        toast.success(
+          usedAI
+            ? `✨ AI extracted ₹${amount} from ${vendor || 'receipt'}`
+            : `Receipt processed! ₹${amount}`
+        );
         onOpenChange(false);
       } else {
         toast.error('Could not extract amount from receipt');
@@ -76,6 +107,7 @@ export const ScanReceiptDialog = ({ open, onOpenChange }: ScanReceiptDialogProps
     } finally {
       setProcessing(false);
       setImageUrl(null);
+      setStatusText('Processing receipt...');
     }
   };
 
