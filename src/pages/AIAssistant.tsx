@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Sparkles, Send, Loader2, Bot, User as UserIcon, Trash2 } from "lucide-react";
 import { streamChat, type ChatMsg } from "@/lib/ai-client";
 import { toast } from "sonner";
-import { formatINR } from "@/lib/indian-currency-formatter";
+import { formatIndianCurrency } from "@/lib/indian-currency-formatter";
 
 const STORAGE_KEY = "ai-assistant-history";
 
@@ -127,7 +127,7 @@ export default function AIAssistant() {
             <div>
               <h1 className="text-lg font-bold leading-tight">AI Assistant</h1>
               <p className="text-xs text-muted-foreground">
-                {transactions?.length ?? 0} txns · {formatINR(monthExpense)} this month
+                {transactions?.length ?? 0} txns · ₹{formatIndianCurrency(monthExpense)} this month
               </p>
             </div>
           </div>
