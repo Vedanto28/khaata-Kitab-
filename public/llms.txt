@@ -1,0 +1,18 @@
+# KhaataKitab
+
+> Offline-first AI bookkeeping assistant for small Indian vendors. Track SMS payments, scan receipts, manage inventory, and get smart financial insights — all processed on-device.
+
+KhaataKitab is a Capacitor-based Android app (with web preview) that helps vendors run their business books without an internet connection. It parses bank/UPI SMS messages, scans paper receipts with AI vision, categorizes transactions with on-device ML plus an LLM fallback, and surfaces monthly insights in plain language.
+
+## Pages
+
+- [Home](/): Landing entry that routes to onboarding, login, or the ledger.
+- [Ledger](/ledger): Daily transaction log with a "Needs Review" tab for low-confidence auto-detected entries.
+- [Inventory](/inventory): Stock list with quantity, price, and total value tracking.
+- [Insights](/insights): AI-generated monthly summary, charts, and goal tracking.
+- [AI Assistant](/ai): Chat with a financial assistant that understands your recent transactions.
+
+## Optional
+
+- [Login](/login): Sign in to an existing KhaataKitab account.
+- [Sign Up](/signup): Create a new account.
