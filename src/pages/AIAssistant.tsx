@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SEO } from '@/components/SEO';
 import { motion, AnimatePresence } from "framer-motion";
 import { useLiveQuery } from "dexie-react-hooks";
 import ReactMarkdown from "react-markdown";
@@ -117,7 +118,9 @@ export default function AIAssistant() {
   }, [transactions]);
 
   return (
-    <div className="min-h-screen bg-background pb-24 flex flex-col">
+    <>
+      <SEO title="AI Assistant | KhaataKitab" description="Chat with your AI financial assistant for insights, tips, and answers about your transactions." path="/ai" />
+      <div className="min-h-screen bg-background pb-24 flex flex-col">
       <header className="sticky top-0 z-10 backdrop-blur bg-background/80 border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -243,5 +246,6 @@ export default function AIAssistant() {
 
       <BottomNav />
     </div>
+    </>
   );
 }

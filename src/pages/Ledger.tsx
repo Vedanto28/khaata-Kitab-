@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { SEO } from '@/components/SEO';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Plus, Filter, Download, Search, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -61,7 +62,9 @@ export default function Ledger() {
   const balance = totalIncome - totalExpense;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <>
+      <SEO title="Ledger | KhaataKitab" description="Track daily income and expenses with auto-detected SMS payments and a Needs Review tab for low-confidence entries." path="/ledger" />
+      <div className="min-h-screen bg-background pb-20">
       {/* Header with Balance */}
       <motion.div
         className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-6 rounded-b-3xl shadow-lg mb-6"
@@ -215,5 +218,6 @@ export default function Ledger() {
 
       <BottomNav />
     </div>
+    </>
   );
 }

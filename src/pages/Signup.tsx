@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SEO } from '@/components/SEO';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,9 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <>
+      <SEO title="Create Account | KhaataKitab" description="Create a free KhaataKitab account and start tracking SMS payments and receipts on-device." path="/signup" />
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -153,5 +156,6 @@ export default function Signup() {
         </Card>
       </motion.div>
     </div>
+    </>
   );
 }

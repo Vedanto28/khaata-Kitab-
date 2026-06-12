@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { SEO } from '@/components/SEO';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { BottomNav } from '@/components/BottomNav';
@@ -63,7 +64,9 @@ export default function Insights() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <>
+      <SEO title="Insights | KhaataKitab" description="AI-powered monthly summary, spending charts, and savings goal tracking for your business." path="/insights" />
+      <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <motion.div
         className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-6 rounded-b-3xl shadow-lg mb-6"
@@ -278,5 +281,6 @@ export default function Insights() {
 
       <BottomNav />
     </div>
+    </>
   );
 }

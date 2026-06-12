@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SEO } from '@/components/SEO';
 import { Package, Plus, TrendingUp, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -29,7 +30,9 @@ export default function Inventory() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <>
+      <SEO title="Inventory | KhaataKitab" description="Track stock items, quantities, prices, and total inventory value for your shop." path="/inventory" />
+      <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-6 rounded-b-3xl shadow-lg">
         <h1 className="text-2xl font-bold mb-4">Inventory</h1>
@@ -175,5 +178,6 @@ export default function Inventory() {
       />
       <BottomNav />
     </div>
+    </>
   );
 }

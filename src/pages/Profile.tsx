@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SEO } from '@/components/SEO';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { motion } from 'framer-motion';
@@ -83,7 +84,9 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <>
+      <SEO title="Profile | KhaataKitab" description="Manage your KhaataKitab account, SMS automation settings, app lock, and language preferences." path="/profile" />
+      <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-6 rounded-b-3xl shadow-lg mb-6">
         <h1 className="text-2xl font-bold">{t('profile.title')}</h1>
@@ -262,5 +265,6 @@ export default function Profile() {
 
       <BottomNav />
     </div>
+    </>
   );
 }
