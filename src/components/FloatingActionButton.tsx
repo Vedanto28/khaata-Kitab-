@@ -92,6 +92,8 @@ export const FloatingActionButton = ({ onAddTransaction, onScanReceipt }: Floati
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
         <Button
           onClick={() => setIsOpen(!isOpen)}
+          aria-label={isOpen ? 'Close quick actions menu' : 'Open quick actions menu'}
+          aria-expanded={isOpen}
           className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-2xl hover:shadow-primary/50"
           style={{ boxShadow: 'var(--glass-shadow)' }}
         >

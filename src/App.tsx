@@ -62,43 +62,45 @@ const AppContent = () => {
 
   return (
     <>
-      <Routes>
-        <Route 
-          path="/" 
-          element={
-            isAuthenticated ? (
-              <Navigate to="/ledger" replace />
-            ) : onboardingComplete ? (
-              <Navigate to="/login" replace />
-            ) : (
-              <Onboarding />
-            )
-          } 
-        />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route 
-          path="/ledger" 
-          element={isAuthenticated ? <Ledger /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
-          path="/inventory" 
-          element={isAuthenticated ? <Inventory /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
-          path="/insights" 
-          element={isAuthenticated ? <Insights /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
-          path="/profile" 
-          element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />} 
-        />
-        <Route
-          path="/ai"
-          element={isAuthenticated ? <AIAssistant /> : <Navigate to="/login" replace />}
-        />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <main>
+        <Routes>
+          <Route 
+            path="/" 
+            element={
+              isAuthenticated ? (
+                <Navigate to="/ledger" replace />
+              ) : onboardingComplete ? (
+                <Navigate to="/login" replace />
+              ) : (
+                <Onboarding />
+              )
+            } 
+          />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route 
+            path="/ledger" 
+            element={isAuthenticated ? <Ledger /> : <Navigate to="/login" replace />} 
+          />
+          <Route 
+            path="/inventory" 
+            element={isAuthenticated ? <Inventory /> : <Navigate to="/login" replace />} 
+          />
+          <Route 
+            path="/insights" 
+            element={isAuthenticated ? <Insights /> : <Navigate to="/login" replace />} 
+          />
+          <Route 
+            path="/profile" 
+            element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />} 
+          />
+          <Route
+            path="/ai"
+            element={isAuthenticated ? <AIAssistant /> : <Navigate to="/login" replace />}
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
       <GuidedTour />
       {isAuthenticated && <SMSConfirmationListener />}
     </>

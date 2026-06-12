@@ -155,7 +155,7 @@ export const ScanReceiptDialog = ({ open, onOpenChange }: ScanReceiptDialogProps
             <div className="space-y-4">
               {imageUrl && (
                 <div className="relative rounded-lg overflow-hidden border">
-                  <img src={imageUrl} alt="Receipt" className="w-full" />
+                  <img src={imageUrl} alt="Captured receipt preview ready for AI extraction" className="w-full" />
                 </div>
               )}
 

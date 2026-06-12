@@ -75,7 +75,7 @@ export default function Inventory() {
                   <Package className="w-12 h-12 text-primary" />
                 </div>
               </div>
-              <h3 className="text-lg font-semibold mb-2">Your stock list is empty</h3>
+              <h2 className="text-lg font-semibold mb-2">Your stock list is empty</h2>
               <p className="text-sm text-muted-foreground mb-6">
                 Start tracking your inventory by adding your first item.
               </p>
@@ -108,7 +108,7 @@ export default function Inventory() {
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <Package className="w-4 h-4 text-primary flex-shrink-0" />
-                      <h3 className="font-semibold truncate">{item.name}</h3>
+                      <h2 className="font-semibold truncate text-base">{item.name}</h2>
                     </div>
                   </div>
                   
@@ -142,6 +142,7 @@ export default function Inventory() {
                         variant="ghost" 
                         size="icon"
                         onClick={() => handleEdit(item)}
+                        aria-label={`Edit ${item.name}`}
                         className="h-8 w-8 hover:bg-primary/10 transition-all duration-200"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -150,6 +151,7 @@ export default function Inventory() {
                         variant="ghost" 
                         size="icon"
                         onClick={() => item.id && handleDelete(item.id)}
+                        aria-label={`Delete ${item.name}`}
                         className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
                       >
                         <Trash2 className="w-4 h-4" />
