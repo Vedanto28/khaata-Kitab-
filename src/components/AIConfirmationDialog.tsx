@@ -92,7 +92,15 @@ export const AIConfirmationDialog = ({
               <Badge variant="secondary" className="ml-2 capitalize">{data.source}</Badge>
             )}
             {confidencePct != null && (
-              <Badge variant="outline" className="ml-2">{confidencePct}% confidence</Badge>
+              <Badge
+                variant={confidencePct < 60 ? 'destructive' : 'outline'}
+                className="ml-2"
+              >
+                {confidencePct}% confidence
+              </Badge>
+            )}
+            {confidencePct != null && confidencePct < 60 && (
+              <Badge variant="destructive" className="ml-2">Needs review</Badge>
             )}
           </DialogDescription>
         </DialogHeader>
