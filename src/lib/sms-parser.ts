@@ -1,5 +1,4 @@
-// Comprehensive SMS Parser for Indian Financial Messages
-// Supports: UPI, Debit Card, Credit Card, Netbanking, Wallet, ATM
+import { normalizeMerchant } from './merchant-intelligence/normalizeMerchant';
 
 export interface ParsedSMS {
   amount: number | null;
@@ -15,6 +14,9 @@ export interface ParsedSMS {
   parseConfidence: number;
   needsReview: boolean;
   rawText: string;
+  merchantRaw?: string;
+  merchantCanonical?: string;
+  merchantCategorySource?: 'dictionary' | 'classifier' | 'llm' | 'manual';
 }
 
 // Extended category mapping for comprehensive classification
@@ -100,40 +102,44 @@ export const saveLearnedMapping = (merchant: string, category: string): void => 
 };
 
 const extractAmount = (text: string): number | null => {
-  const matches = text.match(PATTERNS.amount);
-  if (matches && matches.length > 0) {
-    const amountStr = matches[0].replace(/[Rs.INR₹,\s]/gi, '');
-    const amount = parseFloat(amountStr);
-    return isNaN(amount) ? null : amount;
+  const patterns = [
+    /(?:Rs\.?|INR|₹|rupees?)\s*([\d,]+(?:\.\d{1,2})?)/i,
+    /(?:debited|credited|spent|paid|withdrawn|for|amount|amt|recharge)\s+(?:Rs\.?|INR|₹)?\s*([\d,]+(?:\.\d{1,2})?)/i,
+    /([\d,]+(?:\.\d{1,2})?)\s*(?:Rs\.?|INR|₹|rupees?)/i
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const amountStr = match[1].replace(/,/g, '');
+      const val = parseFloat(amountStr);
+      if (!isNaN(val) && val > 0) return val;
+    }
   }
-  
-  // Try alternative pattern
-  const altMatches = text.match(PATTERNS.amountAlt);
-  if (altMatches && altMatches.length > 0) {
-    const amountStr = altMatches[0].replace(/[^0-9.]/g, '');
-    const amount = parseFloat(amountStr);
-    return isNaN(amount) ? null : amount;
-  }
-  
   return null;
 };
 
 const extractDirection = (text: string): 'debit' | 'credit' | 'unknown' => {
-  if (PATTERNS.debit.test(text)) return 'debit';
-  if (PATTERNS.credit.test(text)) return 'credit';
+  const debitKeywords = /(?:debited|spent|paid|debit|withdrawn|purchase|sent|transferred\s+out|deducted|emi|recharge|payment\s+to)/i;
+  const creditKeywords = /(?:credited|received|credit|deposited|refund|cashback|reversed|added|transferred\s+in|salary)/i;
+  
+  if (debitKeywords.test(text)) return 'debit';
+  if (creditKeywords.test(text)) return 'credit';
   return 'unknown';
 };
 
 const extractMethod = (text: string): ParsedSMS['method'] => {
-  if (PATTERNS.upi.test(text)) return 'upi';
-  if (PATTERNS.atm.test(text)) return 'atm';
-  if (PATTERNS.imps.test(text)) return 'imps';
-  if (PATTERNS.neft.test(text)) return 'neft';
-  if (PATTERNS.rtgs.test(text)) return 'rtgs';
-  if (PATTERNS.creditCard.test(text)) return 'credit_card';
-  if (PATTERNS.debitCard.test(text)) return 'debit_card';
-  if (PATTERNS.wallet.test(text)) return 'wallet';
-  if (PATTERNS.netbanking.test(text)) return 'netbanking';
+  const t = text.toLowerCase();
+  if (t.includes('upi') || t.includes('bhim') || t.includes('gpay') || t.includes('phonepe') || t.includes('paytm')) return 'upi';
+  if (t.includes('atm') || t.includes('cash withdrawal') || t.includes('withdrawn at')) return 'atm';
+  if (t.includes('credit card') || t.includes('cc ending') || (t.includes('card ending') && t.includes('credit'))) return 'credit_card';
+  if (t.includes('debit card') || t.includes('dc ending') || (t.includes('card ending') && t.includes('debit'))) return 'debit_card';
+  if (t.includes('wallet')) return 'wallet';
+  if (t.includes('imps')) return 'imps';
+  if (t.includes('neft')) return 'neft';
+  if (t.includes('rtgs')) return 'rtgs';
+  if (t.includes('netbanking') || t.includes('net banking') || t.includes('online banking')) return 'netbanking';
+  
+  if (t.includes('card')) return 'credit_card';
   return 'unknown';
 };
 
@@ -179,52 +185,77 @@ const extractDateTime = (text: string): Date | null => {
 };
 
 const extractLast4Digits = (text: string): string | null => {
-  const match = text.match(PATTERNS.last4);
-  return match ? match[1] : null;
+  const patterns = [
+    /(?:a\/c|ac|account|card|xx|ending)\s*(?:no\.?|number)?\s*[x*]*(\d{4})\b/i,
+    /\b[x*]+(\d{4})\b/i
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
 };
 
 const extractReferenceId = (text: string): string | null => {
-  const match = text.match(PATTERNS.refId);
-  return match ? match[1] : null;
+  const patterns = [
+    /(?:ref\s*(?:no\.?|id)?|txn\s*(?:id|no)?|utr|imps\s*ref|neft\s*ref|rtgs\s*ref|reference)[:\s]*([a-zA-Z0-9]+)/i,
+    /ref\s+(\d+)/i,
+    /txn\s+(\d+)/i
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
 };
 
 const extractBalance = (text: string): number | null => {
-  const match = text.match(PATTERNS.balance);
-  if (match) {
-    const balanceStr = match[1].replace(/,/g, '');
-    const balance = parseFloat(balanceStr);
-    return isNaN(balance) ? null : balance;
+  const patterns = [
+    /(?:bal(?:ance)?|avl\.?\s*bal|available\s*(?:bal(?:ance)?)?)[:\s]*(?:Rs\.?|INR|₹)?\s*([\d,]+(?:\.\d{1,2})?)/i,
+    /bal\s+Rs\.?\s*([\d,]+(?:\.\d{1,2})?)/i
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const balanceStr = match[1].replace(/,/g, '');
+      const val = parseFloat(balanceStr);
+      if (!isNaN(val)) return val;
+    }
   }
   return null;
 };
 
 const extractMerchant = (text: string): string | null => {
-  // Try to extract UPI ID first
   const upiMatch = text.match(/([a-zA-Z0-9._-]+@[a-zA-Z]+)/);
   if (upiMatch) {
     return upiMatch[1];
   }
   
-  // Try merchant pattern
-  const merchantMatch = text.match(PATTERNS.merchant);
-  if (merchantMatch) {
-    return merchantMatch[1].trim().slice(0, 50);
+  const patterns = [
+    /(?:paid\s+to|spent\s+at|transferred\s+to|received\s+from|ref\s+to|vpa|at)\s+([a-zA-Z0-9\s\-_.&]+?)(?:\s+(?:on|ref|txn|upi|via|rs|inr|₹|bal|avl|\d{2}[-\/\\]))/i,
+    /(?:to|from)\s+([a-zA-Z0-9\s\-_.&]+?)(?:\s+(?:on|ref|txn|upi|via|rs|inr|₹|bal|avl|\d{2}[-\/\\]))/i,
+    /info\s*:\s*([a-zA-Z0-9\s\-_.&]+)/i,
+    /spent\s*Rs\s*[\d,.]+\s*at\s*([a-zA-Z0-9\s\-_.&]+)/i
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const cleaned = match[1].trim();
+      const stopWords = ['bal', 'avl', 'balance', 'account', 'card', 'ending', 'for', 'ref', 'txn', 'on', 'withdrawn'];
+      let words = cleaned.split(/\s+/);
+      words = words.filter(w => !stopWords.includes(w.toLowerCase()));
+      const result = words.join(' ').trim();
+      if (result.length > 2) return result.slice(0, 50);
+    }
   }
-  
-  // Try to extract from \"VPA\" pattern
-  const vpaMatch = text.match(/VPA\s+([a-zA-Z0-9._@-]+)/i);
-  if (vpaMatch) {
-    return vpaMatch[1];
-  }
-  
   return null;
 };
 
 const categorizeTransaction = (text: string, merchant: string | null): { category: string; confidence: number } => {
   const searchText = `${text} ${merchant || ''}`.toLowerCase();
   
-  // Check learned mappings first (highest confidence)
   if (merchant) {
+    // 1. User-learned manual mappings take top priority
     const learnedMappings = getLearnedMappings();
     const merchantLower = merchant.toLowerCase();
     
@@ -233,15 +264,19 @@ const categorizeTransaction = (text: string, merchant: string | null): { categor
         return { category, confidence: 0.95 };
       }
     }
+
+    // 2. Merchant dictionary normalization matching takes second priority
+    const norm = normalizeMerchant(merchant);
+    if (norm.isMatched) {
+      return { category: norm.category, confidence: 1.0 };
+    }
   }
   
-  // Check keyword mappings
   let bestMatch: { category: string; confidence: number } = { category: 'General Expense', confidence: 0.3 };
   
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     for (const keyword of keywords) {
       if (searchText.includes(keyword.toLowerCase())) {
-        // More specific/longer keywords get higher confidence
         const confidence = Math.min(0.9, 0.5 + (keyword.length * 0.03));
         if (confidence > bestMatch.confidence) {
           bestMatch = { category, confidence };
@@ -255,11 +290,11 @@ const categorizeTransaction = (text: string, merchant: string | null): { categor
 
 export const isFinancialSMS = (text: string): boolean => {
   const financialIndicators = [
-    /(?:Rs\.?|INR|₹)\s*[\d,]+/i,
-    /(?:credited|debited|spent|paid|received|withdrawn)/i,
-    /(?:upi|imps|neft|rtgs|debit card|credit card|atm)/i,
-    /(?:a\/c|account|card).{0,10}\d{4}/i,
-    /(?:bal(?:ance)?|avl\.?\s*bal)/i,
+    /(?:Rs\.?|INR|₹|rupees?)\s*[\d,]+/i,
+    /(?:credited|debited|spent|paid|received|withdrawn|refund|deducted|recharge|emi|payment|salary)/i,
+    /(?:upi|imps|neft|rtgs|debit card|credit card|atm|fastag|wallet|card ending|a\/c ending)/i,
+    /(?:a\/c|account|card|xx)\s*(?:no\.?)?\s*[x*]*\d{4}/i,
+    /(?:bal(?:ance)?|avl\.?\s*bal|limit|available)/i,
   ];
   
   const matchCount = financialIndicators.filter(pattern => pattern.test(text)).length;
@@ -278,15 +313,44 @@ export const parseSMS = (rawText: string): ParsedSMS => {
   
   const { category, confidence: categoryConfidence } = categorizeTransaction(rawText, merchant);
   
-  // Calculate overall parse confidence
-  let parseConfidence = 0;
-  if (amount !== null) parseConfidence += 0.4;
-  if (direction !== 'unknown') parseConfidence += 0.25;
-  if (method !== 'unknown') parseConfidence += 0.15;
-  if (merchant) parseConfidence += 0.1;
-  if (referenceId) parseConfidence += 0.1;
+  // Calculate overall parse confidence according to Phase 3
+  let parseConfidence = 0.15; // baseline
+  if (amount !== null) parseConfidence += 0.35;
+  if (direction !== 'unknown') parseConfidence += 0.15;
+  if (merchant) parseConfidence += 0.15;
+  if (method !== 'unknown') parseConfidence += 0.10;
+  if (referenceId) parseConfidence += 0.10;
   
-  const needsReview = direction === 'unknown' || parseConfidence < 0.5 || categoryConfidence < 0.5;
+  parseConfidence = Math.min(1.0, Math.round(parseConfidence * 100) / 100);
+  
+  // Rule: confidence < 0.60 -> needsReview = true, otherwise false
+  const needsReview = parseConfidence < 0.60 || direction === 'unknown';
+
+  // Perform merchant intelligence lookup
+  let merchantRaw = merchant || undefined;
+  let merchantCanonical = merchant || undefined;
+  let merchantCategorySource: ParsedSMS['merchantCategorySource'] = 'classifier';
+
+  if (merchant) {
+    const learnedMappings = getLearnedMappings();
+    const merchantLower = merchant.toLowerCase();
+    let isManual = false;
+    for (const [key] of Object.entries(learnedMappings)) {
+      if (merchantLower.includes(key) || key.includes(merchantLower)) {
+        isManual = true;
+        break;
+      }
+    }
+
+    const norm = normalizeMerchant(merchant);
+    merchantCanonical = norm.canonicalName;
+
+    if (isManual) {
+      merchantCategorySource = 'manual';
+    } else if (norm.isMatched) {
+      merchantCategorySource = 'dictionary';
+    }
+  }
   
   return {
     amount,
@@ -302,6 +366,9 @@ export const parseSMS = (rawText: string): ParsedSMS => {
     parseConfidence,
     needsReview,
     rawText,
+    merchantRaw,
+    merchantCanonical,
+    merchantCategorySource,
   };
 };
 

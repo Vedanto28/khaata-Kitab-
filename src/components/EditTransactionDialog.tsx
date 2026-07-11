@@ -45,12 +45,23 @@ export const EditTransactionDialog = ({ open, onOpenChange, transaction }: EditT
       return;
     }
 
+    const hasCategoryChanged = transaction.category !== category;
+
     await db.transactions.update(transaction.id, {
       type,
       amount: parsedAmount,
       description,
       category,
     });
+
+    if (hasCategoryChanged) {
+      try {
+        const { correctCategory } = await import('@/lib/ml/sms-ml-service');
+        await correctCategory(transaction.id, category);
+      } catch (error) {
+        console.warn('Failed to retrain ML model on category change', error);
+      }
+    }
 
     toast.success('Transaction updated successfully');
     onOpenChange(false);

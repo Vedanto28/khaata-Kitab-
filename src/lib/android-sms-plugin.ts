@@ -2,11 +2,12 @@
 // This module handles native SMS reading on Android devices
 
 import { Capacitor } from '@capacitor/core';
-import { bufferSMS, processSMS, simulateSMSRead } from './sms-service';
+import { bufferSMS, simulateSMSRead } from './sms-service';
+import { ingestSMS } from './ml/sms-ml-service';
 
 // Check if running on Android
 export const isAndroid = (): boolean => {
-  return Capacitor.getPlatform() === 'android';
+  return Capacitor.getPlatform() === 'android' || !Capacitor.isNativePlatform();
 };
 
 // Check if running on native platform (not web)
@@ -95,7 +96,7 @@ export const readSMSMessages = async (limit: number = 100, daysBack: number = 30
     console.log(`Processing ${messages.length} SMS messages`);
     
     for (const sms of messages) {
-      await processSMS(sms);
+      await ingestSMS("demo_user", sms.body, new Date(sms.date));
     }
   } catch (e) {
     console.error('Error reading SMS messages:', e);
@@ -162,9 +163,6 @@ export const initializeSMSAutomation = async (): Promise<void> => {
   }
   
   if (permissions.readSMS) {
-    // Read recent SMS messages
-    await readSMSMessages(100, 7);
-    
     // Register listener for new SMS
     await registerSMSListener();
   }

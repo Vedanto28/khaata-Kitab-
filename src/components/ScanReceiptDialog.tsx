@@ -21,6 +21,22 @@ const CONFIDENCE_THRESHOLD = 0.6;
 const ACCEPTED_MIME = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
 const ACCEPTED_EXT = /\.(jpe?g|png|pdf)$/i;
 
+const mapPaymentMethod = (method: string | null | undefined): Transaction['paymentMethod'] => {
+  if (!method) return 'unknown';
+  const m = method.toLowerCase();
+  if (m.includes('upi') || m.includes('gpay') || m.includes('phonepe') || m.includes('paytm') || m.includes('bhim')) return 'upi';
+  if (m.includes('debit')) return 'debit_card';
+  if (m.includes('credit') || m.includes('card') || m.includes('visa') || m.includes('mastercard') || m.includes('amex') || m.includes('rupay')) return 'credit_card';
+  if (m.includes('net') || m.includes('bank') || m.includes('transfer')) return 'netbanking';
+  if (m.includes('wallet')) return 'wallet';
+  if (m.includes('atm')) return 'atm';
+  if (m.includes('neft')) return 'neft';
+  if (m.includes('rtgs')) return 'rtgs';
+  if (m.includes('imps')) return 'imps';
+  if (m.includes('cash')) return 'wallet';
+  return 'unknown';
+};
+
 export const ScanReceiptDialog = ({ open, onOpenChange }: ScanReceiptDialogProps) => {
   const [processing, setProcessing] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -42,17 +58,31 @@ export const ScanReceiptDialog = ({ open, onOpenChange }: ScanReceiptDialogProps
     let items: string[] = [];
     let rawText = '';
     let confidence = 0.9;
+    let paymentMethodStr: string | undefined;
 
     try {
       setStatusText(isPdf ? 'AI is reading your PDF...' : 'AI is reading your receipt...');
-      const ai = await aiReceipt(dataUrl);
-      if (ai.totalAmount) {
-        amount = ai.totalAmount;
-        vendor = ai.merchant ?? undefined;
-        category = ai.category || category;
-        dateStr = ai.date ?? undefined;
-        items = ai.items || [];
-        confidence = typeof ai.confidence === 'number' ? ai.confidence : 0.85;
+      const ai = await aiReceipt(dataUrl) as any;
+      
+      // Safe mapping layer to support all potential mismatches
+      const parsedReceipt = {
+        merchant: ai.merchantName ?? ai.merchant ?? ai.vendor,
+        amount: typeof ai.amount === 'number' ? ai.amount : (typeof ai.totalAmount === 'number' ? ai.totalAmount : parseFloat(ai.amount || ai.totalAmount || '0')),
+        date: ai.transactionDate ?? ai.date,
+        category: ai.categoryName ?? ai.category,
+        confidence: typeof ai.confidenceScore === 'number' ? ai.confidenceScore : (typeof ai.confidence === 'number' ? ai.confidence : parseFloat(ai.confidenceScore || ai.confidence || '1.0')),
+        paymentMethod: ai.paymentMethod,
+        items: ai.items || []
+      };
+
+      if (parsedReceipt.amount && parsedReceipt.amount > 0) {
+        amount = parsedReceipt.amount;
+        vendor = parsedReceipt.merchant ?? undefined;
+        category = parsedReceipt.category || category;
+        dateStr = parsedReceipt.date ?? undefined;
+        items = parsedReceipt.items;
+        confidence = parsedReceipt.confidence;
+        paymentMethodStr = parsedReceipt.paymentMethod ?? undefined;
       }
     } catch (e: any) {
       console.warn('AI receipt failed, falling back to OCR:', e?.message);
@@ -78,15 +108,16 @@ export const ScanReceiptDialog = ({ open, onOpenChange }: ScanReceiptDialogProps
         source: 'receipt',
         confidence,
         rawText: rawText || (items.length ? items.join('\n') : undefined),
+        paymentMethod: paymentMethodStr,
+        items: items,
       });
       setPendingImage(dataUrl);
       setPendingRaw(rawText);
       setConfirmOpen(true);
-      onOpenChange(false);
     } else {
-      toast.error('Could not extract amount from receipt');
+      toast.error('Unable to extract receipt data.');
     }
-  }, [onOpenChange]);
+  }, []);
 
   const handleFile = useCallback(async (file: File) => {
     if (!ACCEPTED_MIME.includes(file.type) && !ACCEPTED_EXT.test(file.name)) {
@@ -152,46 +183,77 @@ export const ScanReceiptDialog = ({ open, onOpenChange }: ScanReceiptDialogProps
   };
 
   const handleConfirmSave = async (edited: AIConfirmationData) => {
-    const lowConfidence = (edited.confidence ?? 1) < CONFIDENCE_THRESHOLD;
-    const transaction: Transaction = {
-      type: edited.type,
-      amount: edited.amount,
-      description: edited.merchant,
-      category: edited.category,
-      date: edited.date,
-      source: 'receipt',
-      rawData: pendingRaw,
-      verified: !lowConfidence,
-      verifiedVia: 'manual',
-      confidence: edited.confidence,
-      needsReview: lowConfidence,
-      createdAt: new Date(),
-    };
-    await db.transactions.add(transaction);
-    if (pendingImage) {
-      await db.receipts.add({
-        imageUrl: pendingImage,
-        extractedData: {
-          amount: edited.amount,
-          vendor: edited.merchant,
-          date: edited.date.toISOString(),
-        },
+    try {
+      const lowConfidence = (edited.confidence ?? 1) < CONFIDENCE_THRESHOLD;
+      
+      const { normalizeMerchant } = await import('@/lib/merchant-intelligence/normalizeMerchant');
+      const norm = normalizeMerchant(edited.merchant);
+      
+      const isManual = edited.merchant !== confirmData?.merchant || edited.category !== confirmData?.category;
+      const categorySource: Transaction['merchantCategorySource'] = isManual
+        ? 'manual'
+        : (norm.isMatched ? 'dictionary' : 'llm');
+
+      const transaction: Transaction = {
+        type: edited.type,
+        amount: edited.amount,
+        description: norm.canonicalName || edited.merchant,
+        category: edited.category,
+        date: edited.date,
+        source: 'receipt',
+        rawData: pendingRaw,
+        verified: !lowConfidence,
+        verifiedVia: 'manual',
+        confidence: edited.confidence,
+        needsReview: lowConfidence,
         createdAt: new Date(),
-      });
+        paymentMethod: mapPaymentMethod(edited.paymentMethod),
+        merchantRaw: edited.merchant,
+        merchantCanonical: norm.canonicalName || edited.merchant,
+        merchantCategorySource: categorySource,
+      };
+      
+      const transactionId = await db.transactions.add(transaction);
+      
+      if (pendingImage) {
+        await db.receipts.add({
+          imageUrl: pendingImage,
+          transactionId,
+          extractedData: {
+            amount: edited.amount,
+            vendor: edited.merchant,
+            date: edited.date.toISOString(),
+            items: edited.items,
+          },
+          createdAt: new Date(),
+        });
+      }
+      
+      toast.success(
+        lowConfidence
+          ? `Saved ₹${edited.amount} — flagged for review`
+          : `Saved ₹${edited.amount} — ${edited.merchant}`
+      );
+      
+      setConfirmData(null);
+      setPendingImage(null);
+      setPendingRaw('');
+      setConfirmOpen(false);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Failed to save transaction:', error);
+      toast.error('Failed to save transaction.');
+      throw error;
     }
-    toast.success(
-      lowConfidence
-        ? `Saved ₹${edited.amount} — flagged for review`
-        : `Saved ₹${edited.amount} — ${edited.merchant}`
-    );
-    setConfirmData(null);
-    setPendingImage(null);
-    setPendingRaw('');
   };
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open && !confirmOpen} onOpenChange={(val) => {
+        if (!val) {
+          onOpenChange(false);
+        }
+      }}>
         <DialogContent className="sm:max-w-[460px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -279,7 +341,12 @@ export const ScanReceiptDialog = ({ open, onOpenChange }: ScanReceiptDialogProps
 
       <AIConfirmationDialog
         open={confirmOpen}
-        onOpenChange={setConfirmOpen}
+        onOpenChange={(val) => {
+          setConfirmOpen(val);
+          if (!val) {
+            onOpenChange(false);
+          }
+        }}
         data={confirmData}
         onConfirm={handleConfirmSave}
         onDiscard={() => {
@@ -287,6 +354,7 @@ export const ScanReceiptDialog = ({ open, onOpenChange }: ScanReceiptDialogProps
           setPendingImage(null);
           setPendingRaw('');
           toast.info('Discarded');
+          onOpenChange(false);
         }}
       />
     </>

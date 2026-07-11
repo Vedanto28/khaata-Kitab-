@@ -37,11 +37,6 @@ const AppContent = () => {
       const completed = settings[0]?.onboardingCompleted || false;
       const localOnboarding = localStorage.getItem('onboardingCompleted');
       setOnboardingComplete(completed || localOnboarding === 'true');
-      
-      // Initialize SMS automation on Android
-      if (completed || localOnboarding === 'true') {
-        initSMSAutomation().catch(console.error);
-      }
     };
     checkOnboarding();
 

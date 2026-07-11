@@ -3,7 +3,7 @@
 
 import { db, Transaction } from '../db';
 import { predictCategory, updateModel } from './classifier';
-import { parseSMS, isFinancialSMS, type ParsedSMS } from '../sms-parser';
+import { parseSMS, isFinancialSMS, type ParsedSMS, getLearnedMappings } from '../sms-parser';
 import { aiCategorize } from '../ai-client';
 
 // Threshold below which we ask the LLM to refine the category
@@ -43,30 +43,68 @@ export async function processSMSWithML(
     };
   }
   
-  // Step 3: Get ML prediction
-  const textForPrediction = `${parsed.merchant || ''} ${rawSmsText}`.trim();
-  let prediction = await predictCategory(textForPrediction);
+  // Step 3: Get ML prediction with overrides
+  let prediction = { category: parsed.category, confidence: parsed.categoryConfidence };
+  let merchantCategorySource: Transaction['merchantCategorySource'] = 'classifier';
+  let isOverride = false;
 
-  console.log(`[SMS-ML] Predicted: ${prediction.category} (${(prediction.confidence * 100).toFixed(1)}%)`);
-
-  // Step 3b: LLM fallback when confidence is low
-  if (prediction.confidence < LLM_FALLBACK_THRESHOLD && parsed.amount) {
-    try {
-      console.log('[SMS-ML] Confidence low, asking LLM for refinement');
-      const llm = await aiCategorize({
-        text: rawSmsText,
-        merchant: parsed.merchant,
-        amount: parsed.amount,
-        direction: parsed.direction,
-      });
-      if (llm?.category && llm.confidence > prediction.confidence) {
-        prediction = { category: llm.category, confidence: llm.confidence, allProbabilities: { [llm.category]: llm.confidence } };
-        console.log(`[SMS-ML] LLM refined → ${llm.category} (${(llm.confidence * 100).toFixed(1)}%) — ${llm.reason}`);
-        // Online learning: train the local model on the LLM's answer
-        try { await updateModel(textForPrediction, llm.category); } catch (e) { console.warn('[SMS-ML] updateModel failed', e); }
+  if (parsed.merchant) {
+    // Check manual learned mappings first
+    const learnedMappings = getLearnedMappings();
+    const merchantLower = parsed.merchant.toLowerCase();
+    
+    let learnedCat = null;
+    for (const [key, category] of Object.entries(learnedMappings)) {
+      if (merchantLower.includes(key) || key.includes(merchantLower)) {
+        learnedCat = category;
+        break;
       }
-    } catch (e) {
-      console.warn('[SMS-ML] LLM fallback failed (using ML prediction):', e);
+    }
+    
+    if (learnedCat) {
+      prediction = { category: learnedCat, confidence: 0.95 };
+      merchantCategorySource = 'manual';
+      isOverride = true;
+      console.log(`[SMS-ML] Manual override: ${learnedCat} (95%)`);
+    } else {
+      // Check merchant dictionary normalizer
+      const { normalizeMerchant } = await import('../merchant-intelligence/normalizeMerchant');
+      const norm = normalizeMerchant(parsed.merchant);
+      if (norm.isMatched) {
+        prediction = { category: norm.category, confidence: 1.0 };
+        merchantCategorySource = 'dictionary';
+        isOverride = true;
+        console.log(`[SMS-ML] Dictionary override & boost: ${norm.category} (100%)`);
+      }
+    }
+  }
+
+  if (!isOverride) {
+    const textForPrediction = `${parsed.merchant || ''} ${rawSmsText}`.trim();
+    const mlPred = await predictCategory(textForPrediction);
+    prediction = { category: mlPred.category, confidence: mlPred.confidence };
+    merchantCategorySource = 'classifier';
+
+    // Step 3b: LLM fallback when confidence is low
+    if (prediction.confidence < LLM_FALLBACK_THRESHOLD && parsed.amount) {
+      try {
+        console.log('[SMS-ML] Confidence low, asking LLM for refinement');
+        const llm = await aiCategorize({
+          text: rawSmsText,
+          merchant: parsed.merchant,
+          amount: parsed.amount,
+          direction: parsed.direction,
+        });
+        if (llm?.category && llm.confidence > prediction.confidence) {
+          prediction = { category: llm.category, confidence: llm.confidence };
+          merchantCategorySource = 'llm';
+          console.log(`[SMS-ML] LLM refined → ${llm.category} (${(llm.confidence * 100).toFixed(1)}%)`);
+          // Online learning
+          try { await updateModel(textForPrediction, llm.category); } catch (e) { console.warn('[SMS-ML] updateModel failed', e); }
+        }
+      } catch (e) {
+        console.warn('[SMS-ML] LLM fallback failed (using ML prediction):', e);
+      }
     }
   }
 
@@ -77,7 +115,7 @@ export async function processSMSWithML(
   const transaction: Partial<Transaction> = {
     type: parsed.direction === 'credit' ? 'income' : 'expense',
     amount: parsed.amount || 0,
-    description: parsed.merchant || `SMS Transaction`,
+    description: parsed.merchantCanonical || parsed.merchant || `SMS Transaction`,
     category: prediction.category,
     date: parsed.dateTime || receivedAt,
     source: 'sms',
@@ -91,8 +129,20 @@ export async function processSMSWithML(
     referenceId: parsed.referenceId,
     last4Digits: parsed.last4Digits,
     categoryConfidence: prediction.confidence,
-    createdAt: new Date()
+    createdAt: new Date(),
+    merchantRaw: parsed.merchant || undefined,
+    merchantCanonical: parsed.merchantCanonical || parsed.merchant || undefined,
+    merchantCategorySource: merchantCategorySource
   };
+  
+  // Parser test logging for debugging
+  console.log(
+    `[SMS Parsed]\n` +
+    `merchant: ${parsed.merchant || 'SMS Transaction'}\n` +
+    `amount: ${parsed.amount}\n` +
+    `category: ${prediction.category}\n` +
+    `confidence: ${prediction.confidence}`
+  );
   
   return {
     transaction,
@@ -161,6 +211,9 @@ export async function ingestSMS(
           referenceId: processed.parsed.referenceId,
           last4Digits: processed.parsed.last4Digits,
           method: processed.parsed.method,
+          merchantRaw: processed.parsed.merchantRaw,
+          merchantCanonical: processed.parsed.merchantCanonical,
+          merchantCategorySource: processed.transaction.merchantCategorySource || processed.parsed.merchantCategorySource,
         },
       };
       window.dispatchEvent(new CustomEvent('khaata:sms-pending-confirm', { detail }));
@@ -178,16 +231,29 @@ export async function ingestSMS(
 async function checkDuplicate(processed: ProcessedSMS): Promise<boolean> {
   const { parsed } = processed;
   
+  const incrementDuplicateCount = () => {
+    try {
+      const count = parseInt(localStorage.getItem('khaataKitab_duplicatesRemoved') || '0');
+      localStorage.setItem('khaataKitab_duplicatesRemoved', String(count + 1));
+    } catch (e) {
+      console.warn('Failed to update duplicate count in localStorage', e);
+    }
+  };
+
   // Check by reference ID first
   if (parsed.referenceId) {
     const existing = await db.transactions
       .where('referenceId')
       .equals(parsed.referenceId)
       .first();
-    if (existing) return true;
+    if (existing) {
+      console.log(`[Deduplication] Duplicate detected by reference ID: "${parsed.referenceId}"`);
+      incrementDuplicateCount();
+      return true;
+    }
   }
   
-  // Check by amount + time window (±10 minutes)
+  // Check by amount + time window (±10 minutes) + merchant similarity
   if (parsed.amount && parsed.dateTime) {
     const timeWindow = 10 * 60 * 1000; // 10 minutes
     const minTime = new Date(parsed.dateTime.getTime() - timeWindow);
@@ -200,7 +266,22 @@ async function checkDuplicate(processed: ProcessedSMS): Promise<boolean> {
     
     for (const candidate of candidates) {
       // Amount within ±₹2
-      if (Math.abs(candidate.amount - parsed.amount) <= 2) {
+      const amountMatch = Math.abs(candidate.amount - parsed.amount) <= 2;
+      
+      // Merchant similarity
+      let merchantMatch = false;
+      if (parsed.merchant && candidate.description) {
+        const clean = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const c1 = clean(parsed.merchant);
+        const c2 = clean(candidate.description);
+        merchantMatch = c1.includes(c2) || c2.includes(c1);
+      } else {
+        merchantMatch = true;
+      }
+      
+      if (amountMatch && merchantMatch) {
+        console.log(`[Deduplication] Duplicate detected by amount (±₹2) and merchant similarity inside ±10m window: ₹${parsed.amount} at "${parsed.merchant || 'unknown'}"`);
+        incrementDuplicateCount();
         return true;
       }
     }

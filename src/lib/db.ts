@@ -9,6 +9,9 @@ export interface Transaction {
   date: Date;
   source: 'sms' | 'receipt' | 'manual';
   rawData?: string;
+  merchantRaw?: string;
+  merchantCanonical?: string;
+  merchantCategorySource?: 'dictionary' | 'classifier' | 'llm' | 'manual';
   inventoryItemId?: number;
   quantityChange?: number;
   verified?: boolean;

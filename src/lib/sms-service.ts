@@ -194,12 +194,14 @@ export const processBufferedSMS = async (): Promise<number> => {
   const buffer = getSMSBuffer();
   let processedCount = 0;
   
-  for (const sms of buffer) {
-    const result = await processSMS(sms);
-    if (result) processedCount++;
+  if (buffer.length > 0) {
+    const { ingestSMS } = await import('./ml/sms-ml-service');
+    for (const sms of buffer) {
+      const result = await ingestSMS("demo_user", sms.body, new Date(sms.date));
+      if (result) processedCount++;
+    }
+    clearSMSBuffer();
   }
-  
-  clearSMSBuffer();
   return processedCount;
 };
 
@@ -232,29 +234,29 @@ export const checkSMSVerification = async (transaction: Transaction): Promise<bo
 
 // Simulate SMS reading for development (will be replaced by Capacitor plugin)
 export const simulateSMSRead = async (): Promise<RawSMSMessage[]> => {
-  // Sample Indian bank SMS messages for testing
+  // 33 Sample Indian bank SMS messages for testing all parser paths and categories
   return [
     {
-      address: 'SBIINB',
+      address: 'SBIUPI',
       body: 'Rs 1,500.00 debited from A/c XX1234 on 07-Dec-24 by UPI/merchant@paytm for grocery shopping. Avl Bal Rs 25,450.00 -SBI',
-      date: Date.now() - 3600000,
+      date: Date.now() - 3600000 * 1,
       id: 'sim_1'
     },
     {
       address: 'HDFCBK',
-      body: 'INR 35,000.00 credited to your A/c XX5678 on 07-Dec-24. IMPS Ref 412345678901 from SALARY. Bal: Rs 1,25,450.00',
-      date: Date.now() - 7200000,
+      body: 'INR 35,000.00 credited to your HDFC Bank A/c XX5678 on 07-Dec-24. IMPS Ref 412345678901 from SALARY. Bal: Rs 1,25,450.00',
+      date: Date.now() - 3600000 * 2,
       id: 'sim_2'
     },
     {
       address: 'ICICIB',
       body: 'Your ICICI Credit Card XX9012 has been used for Rs.2,499 at AMAZON on 06-Dec-24. Avl Limit: Rs 85,000',
-      date: Date.now() - 86400000,
+      date: Date.now() - 86400000 * 1,
       id: 'sim_3'
     },
     {
       address: 'PAYTMB',
-      body: 'Rs 250 paid to SWIGGY from Paytm Wallet on 07-Dec-24. Ref: TXN123456789. Wallet Bal: Rs 1,250',
+      body: 'Rs 250 paid to ZOMATO from Paytm Wallet on 07-Dec-24. Ref: TXN123456789. Wallet Bal: Rs 1,250',
       date: Date.now() - 1800000,
       id: 'sim_4'
     },
@@ -266,9 +268,171 @@ export const simulateSMSRead = async (): Promise<RawSMSMessage[]> => {
     },
     {
       address: 'KOTAKB',
-      body: 'NEFT of Rs.15,000 credited to A/c XX7890 from ABC COMPANY on 05-Dec-24. Ref: NEFT12345678. Bal Rs.75,000.00',
+      body: 'NEFT of Rs.15,000 credited to A/c XX7890 from AIRLINES REFUND on 05-Dec-24. Ref: NEFT12345678. Bal Rs.75,000.00',
       date: Date.now() - 259200000,
       id: 'sim_6'
+    },
+    {
+      address: 'HDFCBK',
+      body: 'Rs 800.00 debited from A/c XX5678 on 07-Dec-24 by UPI/petrol@hpcl for fuel. Avl Bal Rs 24,650.00',
+      date: Date.now() - 3600000 * 3,
+      id: 'sim_7'
+    },
+    {
+      address: 'PAYTMB',
+      body: 'FASTag recharge of Rs 500.00 successful for vehicle MH12XX1234. Txn ID: 987654. Wallet Bal: Rs 1,200.00',
+      date: Date.now() - 3600000 * 4,
+      id: 'sim_8'
+    },
+    {
+      address: 'SBIINB',
+      body: 'EMI of Rs 12,000.00 deducted from your SBI A/c XX1234 for Credit Card Bill. Ref ID: TXN98765. Bal Rs 13,450',
+      date: Date.now() - 3600000 * 5,
+      id: 'sim_9'
+    },
+    {
+      address: 'HDFCBK',
+      body: 'LIC Insurance Premium Rs.8,500.00 debited from HDFC A/c XX5678 on 05-Dec-24. Ref No: LIC4567890',
+      date: Date.now() - 3600000 * 6,
+      id: 'sim_10'
+    },
+    {
+      address: 'ICICIB',
+      body: 'SIP investment of Rs 10,000.00 debited from your ICICI A/c XX9012 for Zerodha Mutual Fund. Ref: ZER123456',
+      date: Date.now() - 3600000 * 7,
+      id: 'sim_11'
+    },
+    {
+      address: 'AMAZON',
+      body: 'Refund of Rs.450.00 processed for Amazon Txn Ref 897654321 credited to A/c XX1234 on 06-Dec-24',
+      date: Date.now() - 86400000 * 2,
+      id: 'sim_12'
+    },
+    {
+      address: 'PAYTMB',
+      body: 'Rs 299 paid to AIRTEL for mobile recharge from Paytm Wallet on 07-Dec-24. Ref: TXN998877. Wallet Bal: Rs 951',
+      date: Date.now() - 3600000 * 8,
+      id: 'sim_13'
+    },
+    {
+      address: 'AXISBK',
+      body: 'Electricity Bill of Rs.3,250.00 paid to TATA POWER from A/c XX3456 on 06-Dec-24. Ref: TXN112233',
+      date: Date.now() - 3600000 * 9,
+      id: 'sim_14'
+    },
+    {
+      address: 'ICICIB',
+      body: 'Rs 1,200 spent at SWIGGY DINE OUT on 07-Dec-24. Charged to Card ending 9012. Avl Limit: Rs 83,800',
+      date: Date.now() - 3600000 * 10,
+      id: 'sim_15'
+    },
+    {
+      address: 'SBIUPI',
+      body: 'Rs 450.00 debited from A/c XX1234 by UPI/uber@axisbank on 07-Dec-24. Avl Bal Rs 13,000.00',
+      date: Date.now() - 3600000 * 11,
+      id: 'sim_16'
+    },
+    {
+      address: 'HDFCBK',
+      body: 'Rs.680.00 debited from HDFC A/c XX5678 at APOLLO PHARMACY on 06-Dec-24. Ref No: 11224455',
+      date: Date.now() - 3600000 * 12,
+      id: 'sim_17'
+    },
+    {
+      address: 'ICICIB',
+      body: 'Netflix subscription payment Rs 649.00 debited from Card ending 9012 on 06-Dec-24. Ref: NFLX9876',
+      date: Date.now() - 3600000 * 13,
+      id: 'sim_18'
+    },
+    {
+      address: 'SBIINB',
+      body: 'Rent of Rs.8,500.00 paid to HOUSING PG from SBI A/c XX1234 on 01-Dec-24. Ref UTR: SBI998877',
+      date: Date.now() - 86400000 * 5,
+      id: 'sim_19'
+    },
+    {
+      address: 'AXISBK',
+      body: 'Tuition fee Rs.45,000.00 debited from A/c XX3456 on 02-Dec-24 to UNIVERSITY SCHOOL. Ref ID: 11223344',
+      date: Date.now() - 86400000 * 4,
+      id: 'sim_20'
+    },
+    {
+      address: 'KOTAKB',
+      body: 'EMI of Rs.7,500.00 debited from A/c XX7890 for Muthoot Finance loan on 05-Dec-24. Bal Rs.67,500',
+      date: Date.now() - 3600000 * 14,
+      id: 'sim_21'
+    },
+    {
+      address: 'HDFCBK',
+      body: 'Gas Bill payment of Rs.850.00 successful to ADANI GAS from A/c XX5678 on 04-Dec-24',
+      date: Date.now() - 86400000 * 3,
+      id: 'sim_22'
+    },
+    {
+      address: 'PAYTMB',
+      body: 'Rs.340.00 paid to MEDPLUS PHARMACY from Wallet on 07-Dec-24. Ref UTR: 88776655. Wallet Bal: Rs 611',
+      date: Date.now() - 3600000 * 15,
+      id: 'sim_23'
+    },
+    {
+      address: 'AXISBK',
+      body: 'Ajio shopping of Rs.1,899.00 successful on Card ending 3456 on 06-Dec-24. Ref: AJ12345',
+      date: Date.now() - 3600000 * 16,
+      id: 'sim_24'
+    },
+    {
+      address: 'HDFCBK',
+      body: 'Rs.420.00 debited from HDFC A/c XX5678 by UPI/zepto@axisbank on 07-Dec-24. Avl Bal Rs 24,230.00',
+      date: Date.now() - 3600000 * 17,
+      id: 'sim_25'
+    },
+    {
+      address: 'SBIUPI',
+      body: 'Rs.380.00 debited from A/c XX1234 by UPI/zomato@hdfcbank on 07-Dec-24. Avl Bal Rs 12,620.00',
+      date: Date.now() - 3600000 * 18,
+      id: 'sim_26'
+    },
+    {
+      address: 'ICICIB',
+      body: 'Spotify Premium Rs 119.00 debited from Card ending 9012 on 06-Dec-24. Ref: SPOT9876',
+      date: Date.now() - 3600000 * 19,
+      id: 'sim_27'
+    },
+    {
+      address: 'HDFCBK',
+      body: 'Rs.749.00 paid to Reliance Jio for Mobile recharge from A/c XX5678 on 07-Dec-24',
+      date: Date.now() - 3600000 * 20,
+      id: 'sim_28'
+    },
+    {
+      address: 'PHONEPE',
+      body: 'Cashback of Rs.50.00 received in PhonePe Wallet on 07-Dec-24. Wallet Bal: Rs 1,001.00',
+      date: Date.now() - 3600000 * 21,
+      id: 'sim_29'
+    },
+    {
+      address: 'SBIINB',
+      body: 'ATM cash withdrawal Rs 10,000.00 debited from SBI Card ending 1234 on 05-Dec-24. Bal Rs 3,450.00',
+      date: Date.now() - 86400000 * 6,
+      id: 'sim_30'
+    },
+    {
+      address: 'HDFCBK',
+      body: 'INR 4,500.00 debited from A/c XX5678 on 03-Dec-24 for INDIGO AIRLINES booking. Ref: IND998877',
+      date: Date.now() - 86400000 * 7,
+      id: 'sim_31'
+    },
+    {
+      address: 'SBIUPI',
+      body: 'Rs 1,200.00 spent at SCHOOL BOOK STORE on 04-Dec-24. UTR: SCH887766. Bal Rs 23,030.00',
+      date: Date.now() - 86400000 * 8,
+      id: 'sim_32'
+    },
+    {
+      address: 'SBIUPI',
+      body: 'EMI of Rs.3,500.00 deducted from your SBI A/c XX1234 for Bajaj Loan. Ref: BAJ998877',
+      date: Date.now() - 86400000 * 9,
+      id: 'sim_33'
     }
   ];
 };

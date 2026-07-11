@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sparkles, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { categories as mlCategories } from '@/lib/ml/classifier';
+import { toast } from 'sonner';
 
 export interface AIConfirmationData {
   type: 'income' | 'expense';
@@ -18,6 +19,8 @@ export interface AIConfirmationData {
   source: 'sms' | 'receipt';
   confidence?: number;
   rawText?: string;
+  paymentMethod?: string;
+  items?: string[];
 }
 
 interface AIConfirmationDialogProps {
@@ -42,6 +45,8 @@ export const AIConfirmationDialog = ({
   const [dateStr, setDateStr] = useState('');
   const [category, setCategory] = useState('');
   const [type, setType] = useState<'income' | 'expense'>('expense');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [items, setItems] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -51,6 +56,8 @@ export const AIConfirmationDialog = ({
       setDateStr(format(data.date || new Date(), "yyyy-MM-dd'T'HH:mm"));
       setCategory(data.category || 'Other Expense');
       setType(data.type || 'expense');
+      setPaymentMethod(data.paymentMethod || '');
+      setItems(data.items || []);
     }
   }, [data]);
 
@@ -69,8 +76,13 @@ export const AIConfirmationDialog = ({
         date: new Date(dateStr),
         category,
         type,
+        paymentMethod: paymentMethod.trim() || undefined,
+        items: items.map(i => i.trim()).filter(Boolean),
       });
       onOpenChange(false);
+    } catch (err) {
+      console.error('Save failed in handleConfirm:', err);
+      toast.error('Failed to save transaction.');
     } finally {
       setSaving(false);
     }
@@ -167,6 +179,27 @@ export const AIConfirmationDialog = ({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="ai-payment-method">Payment Method</Label>
+            <Input
+              id="ai-payment-method"
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              placeholder="e.g. Cash, Card, UPI"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="ai-items">Items (one per line)</Label>
+            <textarea
+              id="ai-items"
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              value={items.join('\n')}
+              onChange={(e) => setItems(e.target.value.split('\n'))}
+              placeholder="e.g. Item 1&#10;Item 2"
+            />
           </div>
 
           {data?.rawText && (
