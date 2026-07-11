@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Transaction } from '@/lib/db';
+import { Transaction } from '@/database/db';
 import { format, startOfDay, isSameDay } from 'date-fns';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';

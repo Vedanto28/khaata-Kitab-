@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Transaction, db } from '@/lib/db';
+import { Transaction, db } from '@/database/db';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ArrowDownRight, ArrowUpRight, MessageSquare, Camera, Edit, CheckCircle2, ShieldCheck, AlertCircle, Bot, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { EditTransactionDialog } from './EditTransactionDialog';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
 
 interface TransactionListProps {
