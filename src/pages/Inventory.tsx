@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { SEO } from '@/components/SEO';
+import { SEO } from '@/components/common/SEO';
 import { Package, Plus, TrendingUp, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { db, InventoryItem } from '@/lib/db';
+import { db, InventoryItem } from '@/database/db';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { BottomNav } from '@/components/BottomNav';
-import { AddInventoryDialog } from '@/components/AddInventoryDialog';
+import { BottomNav } from '@/components/common/BottomNav';
+import { AddInventoryDialog } from '@/components/inventory/AddInventoryDialog';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Inventory() {

@@ -1,7 +1,7 @@
 // SMS Reader - Main interface for SMS automation in KhaataKitab
 // Re-exports from modular SMS components for backward compatibility
 
-import { Transaction, db, saveCategoryMapping } from './db';
+import { Transaction, db, saveCategoryMapping } from '@/database/db';
 import { 
   parseSMS as parseFinancialSMS, 
   isFinancialSMS, 
@@ -9,14 +9,14 @@ import {
   maskSensitiveData,
   saveLearnedMapping,
   getLearnedMappings 
-} from './sms-parser';
+} from './smsParser';
 import { 
   processSMS, 
   processBufferedSMS, 
   updateCategoryLearning,
   checkSMSVerification,
   simulateSMSRead 
-} from './sms-service';
+} from './smsService';
 import { 
   initializeSMSAutomation, 
   requestSMSPermissions as requestAndroidSMSPermissions,
@@ -25,7 +25,7 @@ import {
   registerSMSListener,
   isAndroid,
   isNative
-} from './android-sms-plugin';
+} from './androidSmsPlugin';
 
 // Re-export types
 export type { ParsedSMS };

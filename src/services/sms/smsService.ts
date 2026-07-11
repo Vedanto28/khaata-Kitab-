@@ -1,7 +1,7 @@
 // SMS Service for Android - Handles SMS reading, processing, and transaction creation
-import { db, Transaction } from './db';
-import { parseSMS, isFinancialSMS, maskSensitiveData, ParsedSMS, saveLearnedMapping } from './sms-parser';
-import { predictCategory, updateModel } from './ml/classifier';
+import { db, Transaction } from '@/database/db';
+import { parseSMS, isFinancialSMS, maskSensitiveData, ParsedSMS, saveLearnedMapping } from './smsParser';
+import { predictCategory, updateModel } from '@/lib/ml/classifier';
 
 interface RawSMSMessage {
   address: string;
@@ -195,7 +195,7 @@ export const processBufferedSMS = async (): Promise<number> => {
   let processedCount = 0;
   
   if (buffer.length > 0) {
-    const { ingestSMS } = await import('./ml/sms-ml-service');
+    const { ingestSMS } = await import('@/lib/ml/sms-ml-service');
     for (const sms of buffer) {
       const result = await ingestSMS("demo_user", sms.body, new Date(sms.date));
       if (result) processedCount++;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SEO } from '@/components/SEO';
+import { SEO } from '@/components/common/SEO';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Bot, Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
 export default function Login() {

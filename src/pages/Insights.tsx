@@ -1,16 +1,16 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { SEO } from '@/components/SEO';
+import { SEO } from '@/components/common/SEO';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
-import { BottomNav } from '@/components/BottomNav';
+import { db } from '@/database/db';
+import { BottomNav } from '@/components/common/BottomNav';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown, AlertCircle, CheckCircle2, DollarSign, Wallet, FileText, MessageSquare, CheckSquare, Shield, Layers, HelpCircle, BarChart2, PieChart as PieIcon, LineChart as LineIcon } from 'lucide-react';
-import { predictCashflow, generateAlerts, calculateCreditSignal } from '@/lib/ai-insights';
+import { predictCashflow, generateAlerts, calculateCreditSignal } from '@/services/ai/aiInsights';
 import { Badge } from '@/components/ui/badge';
-import { OfflineSyncIndicator } from '@/components/OfflineSyncIndicator';
-import { DashboardSummaryCards } from '@/components/DashboardSummaryCards';
-import { AIMonthlySummary } from '@/components/AIMonthlySummary';
+import { OfflineSyncIndicator } from '@/components/common/OfflineSyncIndicator';
+import { DashboardSummaryCards } from '@/components/dashboard/DashboardSummaryCards';
+import { AIMonthlySummary } from '@/components/ai/AIMonthlySummary';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, BarChart, Bar, Legend } from 'recharts';
 
 export default function Insights() {

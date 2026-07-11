@@ -1,22 +1,22 @@
 import { useState, useEffect } from 'react';
-import { SEO } from '@/components/SEO';
+import { SEO } from '@/components/common/SEO';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { motion } from 'framer-motion';
-import { db } from '@/lib/db';
-import { BottomNav } from '@/components/BottomNav';
+import { db } from '@/database/db';
+import { BottomNav } from '@/components/common/BottomNav';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { MessageSquare, Download, Trash2, Shield, Moon, Sun, Globe, LogOut } from 'lucide-react';
-import { requestSMSPermission, initSMSAutomation } from '@/lib/sms-reader';
+import { requestSMSPermission, initSMSAutomation } from '@/services/sms/smsReader';
 import { toast } from 'sonner';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useLanguage, Language } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { AppLockSettings } from '@/components/AppLockSettings';
+import { useTheme } from '@/context/ThemeContext';
+import { useLanguage, Language } from '@/context/LanguageContext';
+import { useAuth } from '@/context/AuthContext';
+import { AppLockSettings } from '@/components/authentication/AppLockSettings';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -152,7 +152,7 @@ export default function Profile() {
         toast.success('SMS permission granted');
         
         // Native: Trigger historical read on manual enable
-        const { isNative, readSMSMessages } = await import('@/lib/android-sms-plugin');
+        const { isNative, readSMSMessages } = await import('@/services/sms/androidSmsPlugin');
         if (isNative()) {
           await readSMSMessages(100, 7);
         }
@@ -284,7 +284,7 @@ export default function Profile() {
                   await initSMSAutomation();
                   
                   // Explicitly import mock SMS history
-                  const { readSMSMessages } = await import('@/lib/android-sms-plugin');
+                  const { readSMSMessages } = await import('@/services/sms/androidSmsPlugin');
                   await readSMSMessages(100, 7);
                   
                   localStorage.setItem('demoSmsImported', 'true');

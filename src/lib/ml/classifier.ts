@@ -1,7 +1,7 @@
 // On-device Naive Bayes Classifier for SMS categorization
 // Implements online learning with persistent model storage
 
-import { db } from '../db';
+import { db } from '@/database/db';
 import { keywordMap, categories, getTrainingData } from './keyword-map';
 
 interface CategoryWeights {

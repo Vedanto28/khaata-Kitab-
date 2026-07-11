@@ -1,22 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SEO } from '@/components/SEO';
+import { SEO } from '@/components/common/SEO';
 import { motion, AnimatePresence } from "framer-motion";
 import { useLiveQuery } from "dexie-react-hooks";
 import ReactMarkdown from "react-markdown";
-import { db } from "@/lib/db";
-import { BottomNav } from "@/components/BottomNav";
+import { db } from "@/database/db";
+import { BottomNav } from "@/components/common/BottomNav";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sparkles, Send, Loader2, Bot, User as UserIcon, Trash2 } from "lucide-react";
-import { streamChat, type ChatMsg } from "@/lib/ai-client";
+import { streamChat, type ChatMsg } from "@/services/ai/aiClient";
 import { toast } from "sonner";
-import { formatIndianCurrency } from "@/lib/indian-currency-formatter";
+import { formatIndianCurrency } from "@/lib/utils/indianCurrencyFormatter";
 import { 
   generateFinancialProfile, 
   calculateFinancialHealthScore, 
   generateSmartInsights 
-} from "@/lib/financialCopilot";
+} from "@/services/ai/financialCopilot";
 
 const STORAGE_KEY = "ai-assistant-history";
 

@@ -1,4 +1,4 @@
-import { normalizeMerchant } from './merchant-intelligence/normalizeMerchant';
+import { normalizeMerchant } from '@/lib/merchant/normalizeMerchant';
 
 export interface ParsedSMS {
   amount: number | null;

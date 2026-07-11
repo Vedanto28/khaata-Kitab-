@@ -1,4 +1,4 @@
-import { Transaction } from './db';
+import { Transaction } from '@/database/db';
 
 export interface FinancialProfile {
   monthlyIncome: number;

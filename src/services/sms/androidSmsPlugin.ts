@@ -2,8 +2,8 @@
 // This module handles native SMS reading on Android devices
 
 import { Capacitor } from '@capacitor/core';
-import { bufferSMS, simulateSMSRead } from './sms-service';
-import { ingestSMS } from './ml/sms-ml-service';
+import { bufferSMS, simulateSMSRead } from './smsService';
+import { ingestSMS } from '@/lib/ml/sms-ml-service';
 
 // Check if running on Android
 export const isAndroid = (): boolean => {

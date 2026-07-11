@@ -1,10 +1,10 @@
 // SMS ML Service - Integrates classifier with SMS parsing
 // Handles the complete flow: SMS → Parse → Classify (ML + LLM fallback) → Store
 
-import { db, Transaction } from '../db';
+import { db, Transaction } from '@/database/db';
 import { predictCategory, updateModel } from './classifier';
-import { parseSMS, isFinancialSMS, type ParsedSMS, getLearnedMappings } from '../sms-parser';
-import { aiCategorize } from '../ai-client';
+import { parseSMS, isFinancialSMS, type ParsedSMS, getLearnedMappings } from '@/services/sms/smsParser';
+import { aiCategorize } from '@/services/ai/aiClient';
 
 // Threshold below which we ask the LLM to refine the category
 const LLM_FALLBACK_THRESHOLD = 0.45;
@@ -68,7 +68,7 @@ export async function processSMSWithML(
       console.log(`[SMS-ML] Manual override: ${learnedCat} (95%)`);
     } else {
       // Check merchant dictionary normalizer
-      const { normalizeMerchant } = await import('../merchant-intelligence/normalizeMerchant');
+      const { normalizeMerchant } = await import('@/lib/merchant/normalizeMerchant');
       const norm = normalizeMerchant(parsed.merchant);
       if (norm.isMatched) {
         prediction = { category: norm.category, confidence: 1.0 };

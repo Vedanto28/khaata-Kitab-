@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Bot, DollarSign, FileText, Sparkles, TrendingUp, Wallet, Receipt, BarChart3, Plus, CreditCard, ArrowUpRight, BookOpen, UserCircle } from 'lucide-react';
-import { db, initializeSettings } from '@/lib/db';
+import { db, initializeSettings } from '@/database/db';
 
 export default function Onboarding() {
   const navigate = useNavigate();
